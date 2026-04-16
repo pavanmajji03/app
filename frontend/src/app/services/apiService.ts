@@ -56,7 +56,18 @@ export async function initApiConfig(): Promise<void> {
     if (!res.ok) {
       throw new Error(`Failed to load API config: ${res.status} ${res.statusText}`);
     }
-    _apiConfig = await res.json();
+    const config = await res.json();
+    
+    // Replace localhost:8001 URLs with environment variable if available
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    if (apiBaseUrl) {
+      // Replace all localhost:8001/api/v1 references with the env variable
+      const configStr = JSON.stringify(config);
+      const updatedConfigStr = configStr.replace(/http:\/\/localhost:8001\/api\/v1/g, apiBaseUrl);
+      _apiConfig = JSON.parse(updatedConfigStr);
+    } else {
+      _apiConfig = config;
+    }
   })();
 
   return _initPromise;
