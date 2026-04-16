@@ -1,6 +1,7 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, Text, Uuid, func
+from datetime import datetime, timezone
+from sqlalchemy import Column, DateTime, Integer, JSON, String, Text, Uuid
 
 from app.db.session import Base
 
@@ -27,5 +28,5 @@ class Creator(Base):
     subscribers_str = Column(String, nullable=True)  # e.g. "1.2M"
     avg_views_str = Column(String, nullable=True)    # e.g. "~45K"
     growth_rate_str = Column(String, nullable=True)  # e.g. "+12%"
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc))

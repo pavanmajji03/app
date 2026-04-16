@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, JSON, Text, Uuid, func
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, JSON, Text, Uuid
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -40,7 +41,7 @@ class CreatorAnalysis(Base):
     narrative = Column(Text, nullable=True)         # LLM-generated thesis
     error = Column(Text, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc))
 
     creator = relationship("Creator", backref="analyses")

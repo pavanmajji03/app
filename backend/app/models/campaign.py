@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import uuid
-
-from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Uuid, func
+from datetime import datetime, timezone
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Integer, String, Uuid
 
 from app.db.session import Base
 
@@ -28,5 +28,5 @@ class Campaign(Base):
     return_low = Column(Float, nullable=True)
     return_base = Column(Float, nullable=True)
     return_high = Column(Float, nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), onupdate=lambda: datetime.now(timezone.utc))
