@@ -508,7 +508,7 @@ export function CreatorReport() {
           </h2>
 
           {/* Content Performance Breakdown */}
-          {ch.content_performance_breakdown?.analyzed && (
+          {channel.content_performance_breakdown?.analyzed && (
             <div className="mb-8">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <Play size={18} style={{ color: palette.primary }} />
@@ -526,7 +526,7 @@ export function CreatorReport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ch.content_performance_breakdown.topics.map((topic: any, i: number) => (
+                    {channel.content_performance_breakdown.topics.map((topic: any, i: number) => (
                       <tr key={i} style={{ borderBottom: `1px solid ${palette.border}20` }}>
                         <td className="py-3 px-3" style={{ color: palette.text }}>{topic.topic_series}</td>
                         <td className="py-3 px-3 font-bold" style={{ color: palette.primary }}>{topic.avg_views}</td>
@@ -546,13 +546,13 @@ export function CreatorReport() {
                 </table>
               </div>
               <p className="text-xs mt-3" style={{ color: palette.textSubtle }}>
-                {ch.content_performance_breakdown.notes}
+                {channel.content_performance_breakdown.notes}
               </p>
             </div>
           )}
 
           {/* Audience Insights */}
-          {ch.audience_insights && (
+          {channel.audience_insights && (
             <div className="mb-8">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <Users size={18} style={{ color: palette.primary }} />
@@ -563,7 +563,7 @@ export function CreatorReport() {
                 {/* Geographic Distribution */}
                 <div className="p-4 rounded-xl" style={{ backgroundColor: palette.surfaceAlt }}>
                   <h4 className="text-sm font-bold mb-3" style={{ color: palette.text }}>Geographic Distribution</h4>
-                  {ch.audience_insights.geographic_distribution.map((country: any, i: number) => (
+                  {channel.audience_insights.geographic_distribution.map((country: any, i: number) => (
                     <div key={i} className="flex items-center justify-between mb-2">
                       <span className="text-sm flex items-center gap-2" style={{ color: palette.textMuted }}>
                         <span className="text-lg">{country.flag}</span>
@@ -579,7 +579,7 @@ export function CreatorReport() {
                   <h4 className="text-sm font-bold mb-3" style={{ color: palette.text }}>Demographics</h4>
                   <div className="mb-3">
                     <p className="text-xs font-bold mb-2" style={{ color: palette.textMuted }}>Age Distribution</p>
-                    {ch.audience_insights.demographics.age_ranges.slice(0, 3).map((range: any, i: number) => (
+                    {channel.audience_insights.demographics.age_ranges.slice(0, 3).map((range: any, i: number) => (
                       <div key={i} className="flex justify-between text-xs mb-1" style={{ color: palette.textMuted }}>
                         <span>{range.range}</span>
                         <span className="font-bold" style={{ color: palette.text }}>{range.percentage}%</span>
@@ -590,10 +590,10 @@ export function CreatorReport() {
                     <p className="text-xs font-bold mb-2" style={{ color: palette.textMuted }}>Gender Split</p>
                     <div className="flex gap-2">
                       <div className="flex-1 text-center py-1 rounded text-xs font-bold" style={{ backgroundColor: `${palette.primary}18`, color: palette.primary }}>
-                        M: {ch.audience_insights.demographics.gender_split.male}%
+                        M: {channel.audience_insights.demographics.gender_split.male}%
                       </div>
                       <div className="flex-1 text-center py-1 rounded text-xs font-bold" style={{ backgroundColor: `${palette.accent}18`, color: palette.accent }}>
-                        F: {ch.audience_insights.demographics.gender_split.female}%
+                        F: {channel.audience_insights.demographics.gender_split.female}%
                       </div>
                     </div>
                   </div>
@@ -606,25 +606,25 @@ export function CreatorReport() {
                   <div>
                     <p className="text-xs" style={{ color: palette.textSubtle }}>Peak Hours (UTC)</p>
                     <p className="text-sm font-bold mt-1" style={{ color: palette.text }}>
-                      {ch.audience_insights.engagement_patterns.peak_hours_utc.join(', ')}
+                      {channel.audience_insights.engagement_patterns.peak_hours_utc.join(', ')}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs" style={{ color: palette.textSubtle }}>Avg Watch Time</p>
                     <p className="text-sm font-bold mt-1" style={{ color: palette.text }}>
-                      {ch.audience_insights.engagement_patterns.avg_watch_time_minutes} min
+                      {channel.audience_insights.engagement_patterns.avg_watch_time_minutes} min
                     </p>
                   </div>
                   <div>
                     <p className="text-xs" style={{ color: palette.textSubtle }}>CTR</p>
                     <p className="text-sm font-bold mt-1" style={{ color: palette.success }}>
-                      {ch.audience_insights.engagement_patterns.click_through_rate_pct}%
+                      {channel.audience_insights.engagement_patterns.click_through_rate_pct}%
                     </p>
                   </div>
                   <div>
                     <p className="text-xs" style={{ color: palette.textSubtle }}>Blended CPM</p>
                     <p className="text-sm font-bold mt-1" style={{ color: palette.primary }}>
-                      {ch.audience_insights.blended_cpm_usd}
+                      {channel.audience_insights.blended_cpm_usd}
                     </p>
                   </div>
                 </div>
@@ -633,14 +633,14 @@ export function CreatorReport() {
           )}
 
           {/* Competitor Analysis */}
-          {ch.competitor_analysis && ch.competitor_analysis.length > 0 && (
+          {channel.competitor_analysis && channel.competitor_analysis.length > 0 && (
             <div>
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <Shield size={18} style={{ color: palette.primary }} />
                 Competitor Analysis
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
-                {ch.competitor_analysis.map((comp: any, i: number) => (
+                {channel.competitor_analysis.map((comp: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl" style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}>
                     <h4 className="font-bold mb-2" style={{ color: palette.text }}>{comp.name}</h4>
                     <div className="space-y-1.5 mb-3">
@@ -679,14 +679,14 @@ export function CreatorReport() {
           </h2>
 
           {/* Next 10 Video Ideas */}
-          {ch.video_recommendations && ch.video_recommendations.length > 0 && (
+          {channel.video_recommendations && channel.video_recommendations.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <Zap size={18} style={{ color: palette.primary }} />
                 Next 10 Video Ideas (High Revenue Potential)
               </h3>
               <div className="grid md:grid-cols-2 gap-3">
-                {ch.video_recommendations.map((video: any, i: number) => (
+                {channel.video_recommendations.map((video: any, i: number) => (
                   <div key={i} className="p-3 rounded-xl" style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h4 className="text-sm font-bold flex-1" style={{ color: palette.text }}>{video.title}</h4>
@@ -709,7 +709,7 @@ export function CreatorReport() {
           )}
 
           {/* Revenue Diversification */}
-          {ch.revenue_diversification && (
+          {channel.revenue_diversification && (
             <div className="mb-8">
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <TrendingUp size={18} style={{ color: palette.primary }} />
@@ -720,20 +720,20 @@ export function CreatorReport() {
                   <div>
                     <p className="text-xs font-bold" style={{ color: palette.textMuted }}>Current Monthly (AdSense)</p>
                     <p className="text-2xl font-black mt-1" style={{ color: palette.success }}>
-                      {ch.revenue_diversification.current_revenue_streams.adsense.monthly_estimate}
+                      {channel.revenue_diversification.current_revenue_streams.adsense.monthly_estimate}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-bold" style={{ color: palette.textMuted }}>Total Potential Monthly</p>
                     <p className="text-2xl font-black mt-1" style={{ color: palette.primary }}>
-                      {ch.revenue_diversification.total_potential_monthly}
+                      {channel.revenue_diversification.total_potential_monthly}
                     </p>
                   </div>
                 </div>
               </div>
               
               <div className="grid md:grid-cols-2 gap-3">
-                {ch.revenue_diversification.potential_revenue_streams.map((stream: any, i: number) => (
+                {channel.revenue_diversification.potential_revenue_streams.map((stream: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl" style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}>
                     <h4 className="font-bold text-sm mb-2" style={{ color: palette.text }}>{stream.stream}</h4>
                     <p className="text-lg font-black mb-2" style={{ color: palette.primary }}>{stream.monthly_potential}/mo</p>
@@ -746,20 +746,20 @@ export function CreatorReport() {
                 ))}
               </div>
               <p className="text-xs mt-4 px-4 py-2 rounded-lg" style={{ backgroundColor: `${palette.warning}10`, color: palette.textMuted }}>
-                <strong style={{ color: palette.warning }}>Recommendation:</strong> {ch.revenue_diversification.recommendation}
+                <strong style={{ color: palette.warning }}>Recommendation:</strong> {channel.revenue_diversification.recommendation}
               </p>
             </div>
           )}
 
           {/* Growth Action Plan */}
-          {ch.growth_action_plan && ch.growth_action_plan.length > 0 && (
+          {channel.growth_action_plan && channel.growth_action_plan.length > 0 && (
             <div>
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: palette.text }}>
                 <RefreshCw size={18} style={{ color: palette.primary }} />
                 30-Day Growth Action Plan
               </h3>
               <div className="space-y-3">
-                {ch.growth_action_plan.map((action: any, i: number) => (
+                {channel.growth_action_plan.map((action: any, i: number) => (
                   <div key={i} className="p-4 rounded-xl" style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}>
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-sm" style={{
