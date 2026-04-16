@@ -251,6 +251,14 @@ export function CampaignSetup() {
         returnHigh: 14,
         riskLevel: report.aiScore >= 80 ? 'Low' : report.aiScore >= 65 ? 'Medium' : 'High',
       } as Creator);
+      
+      // Restore analysis_id to sessionStorage if not present
+      if (!sessionStorage.getItem('fanfolio_analysis_id') && user?.email) {
+        const storedAnalysisId = localStorage.getItem(`fanfolio_analysis_id_${user.email}`);
+        if (storedAnalysisId) {
+          sessionStorage.setItem('fanfolio_analysis_id', storedAnalysisId);
+        }
+      }
     } else {
       navigate('/onboard', { replace: true });
     }
@@ -296,7 +304,9 @@ export function CampaignSetup() {
   const handlePublish = async () => {
     setPublishing(true);
     setPublishError(null);
-    const analysisId = sessionStorage.getItem('fanfolio_analysis_id');
+    const analysisId = 
+      sessionStorage.getItem('fanfolio_analysis_id') ||
+      (user?.email ? localStorage.getItem(`fanfolio_analysis_id_${user.email}`) : null);
     if (!analysisId) {
       setPublishError('No analysis found. Please run an analysis first.');
       setPublishing(false);

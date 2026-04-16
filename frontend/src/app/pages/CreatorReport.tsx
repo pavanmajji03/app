@@ -137,6 +137,11 @@ export function CreatorReport() {
         try {
           const parsed = JSON.parse(fromLocal);
           sessionStorage.setItem('fanfolio_report', fromLocal);
+          // Also restore analysis_id to sessionStorage
+          const storedAnalysisId = localStorage.getItem(`fanfolio_analysis_id_${user.email}`);
+          if (storedAnalysisId) {
+            sessionStorage.setItem('fanfolio_analysis_id', storedAnalysisId);
+          }
           setChannel(parsed);
           return;
         } catch { /* fall through */ }
