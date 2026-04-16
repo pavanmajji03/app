@@ -67,7 +67,7 @@ const socialLinks = [
 
 const footerLinks = [
   { label: 'Marketplace', to: '/marketplace' },
-  { label: 'List Your Channel', to: '/onboard' },
+  { label: 'For Creators', to: '/onboard' },
   { label: 'About Us', to: '/about' },
 ];
 

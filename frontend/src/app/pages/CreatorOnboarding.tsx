@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { callApi } from '../services/apiService';
+import { getStoredReport } from '../utils/reportUtils';
 import type { OnboardingConfig } from '../data/mockData';
 import { PlayCircle, AtSign, Video, ChevronRight, Check, Zap, Shield, TrendingUp, Link } from 'lucide-react';
 
@@ -144,6 +145,14 @@ export function CreatorOnboarding() {
   });
 
   useEffect(() => {
+    // Check if user already has a completed analysis - redirect to report
+    const storedReport = getStoredReport(user?.email);
+    if (storedReport && storedReport.aiScore) {
+      // User has completed analysis, redirect to their report
+      navigate('/report', { replace: true });
+      return;
+    }
+
     callApi<OnboardingConfig>('getOnboardingConfig_CreatorOnboarding').then(async res => {
       setConfig(res.data);
 

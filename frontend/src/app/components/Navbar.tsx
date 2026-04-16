@@ -119,7 +119,10 @@ export function Navbar() {
 
   const navLinks = [
     { label: 'Marketplace', path: '/marketplace' },
-    ...(user?.role === 'creator' ? [{ label: 'My Channel', path: '/creator' }, { label: 'List Your Channel', path: '/onboard' }] : []),
+    ...(user?.role === 'creator' ? [
+      { label: 'My Dashboard', path: '/report' }, // Changed from "My Channel" and points to report
+      { label: 'New Analysis', path: '/onboard' }  // Changed from "List Your Channel"
+    ] : []),
     { label: 'About Us', path: '/about' },
   ];
 
