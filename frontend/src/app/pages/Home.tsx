@@ -184,10 +184,10 @@ export function Home() {
           className="mt-16 rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-6"
           style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
         >
-          <StatCard value="142" label="Creators Onboarded" color={palette.primary} />
-          <StatCard value="$2.4M" label="Paper Backed" color={palette.accent} />
-          <StatCard value="3,800+" label="Fan Backers" color={palette.success} />
-          <StatCard value="94%" label="Forecast Accuracy" color={palette.primaryLight} />
+          <StatCard value="20+" label="Creators Interested" color={palette.primary} />
+          <StatCard value="$15K" label="Ready to Invest" color={palette.accent} />
+          <StatCard value="30+" label="Fan Investors" color={palette.success} />
+          <StatCard value="94%" label="AI Accuracy" color={palette.primaryLight} />
         </div>
       </section>
 
