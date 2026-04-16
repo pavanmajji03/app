@@ -377,9 +377,9 @@ def build_report(
         "content_performance_breakdown": _generate_content_performance(videos, niche, rpm),
         "audience_insights": _generate_audience_insights(ch, subs, location),
         "competitor_analysis": _generate_competitor_analysis(niche, subs, avg_views, growth_pct),
-        "video_recommendations": _generate_video_recommendations(niche, rpm),
+        "video_recommendations": _generate_video_recommendations(niche, rpm, videos, avg_views),
         "revenue_diversification": _generate_revenue_diversification(subs, rpm, tf_180),
-        "growth_action_plan": _generate_growth_action_plan(cadence, growth_pct, active_platforms),
+        "growth_action_plan": _generate_growth_action_plan(cadence, growth_pct, active_platforms, subs, avg_views),
     }
 
 
@@ -462,69 +462,157 @@ def _generate_audience_insights(channel: dict, subs: int, location: str) -> dict
 
 
 def _generate_competitor_analysis(niche: str, subs: int, avg_views: int, growth_pct: float) -> list:
-    """Generate competitor analysis with similar channels"""
-    # Generate 3 realistic competitors based on niche and size
-    competitor_templates = [
-        {
-            "name": "TechLinked" if "tech" in niche.lower() else "Competitor A",
-            "subscribers": f"{int(subs * 0.8 / 100000) / 10:.1f}M",
-            "avg_views": f"{int(avg_views * 0.7 / 100000) / 10:.1f}M",
-            "growth_rate": f"+{max(0, growth_pct - 5):.0f}%",
-            "content_strategy": "Daily tech news updates, shorter format",
-            "strengths": ["Consistent upload schedule", "Strong community engagement"],
-            "positioning": "More frequent, news-focused content"
-        },
-        {
-            "name": "MKBHD" if "tech" in niche.lower() else "Competitor B",
-            "subscribers": f"{int(subs * 1.2 / 100000) / 10:.1f}M",
-            "avg_views": f"{int(avg_views * 1.5 / 100000) / 10:.1f}M",
-            "growth_rate": f"+{growth_pct + 3:.0f}%",
-            "content_strategy": "High-production reviews, premium feel",
-            "strengths": ["Exceptional production quality", "Industry connections"],
-            "positioning": "Premium positioning, fewer but higher-quality videos"
-        },
-        {
-            "name": "Linus Tech Tips" if "tech" in niche.lower() else "Competitor C",
-            "subscribers": f"{int(subs * 1.8 / 100000) / 10:.1f}M",
-            "avg_views": f"{int(avg_views * 1.3 / 100000) / 10:.1f}M",
-            "growth_rate": f"+{max(0, growth_pct - 2):.0f}%",
-            "content_strategy": "Team-driven, multiple series, entertainment focus",
-            "strengths": ["Multiple revenue streams", "Large team production"],
-            "positioning": "Entertainment-first approach with technical depth"
-        }
-    ]
+    """Generate competitor analysis with realistic similar channels based on creator metrics"""
     
-    return competitor_templates
+    # Generate 3 competitors at different scales (smaller, similar, larger)
+    competitors = []
+    
+    # Competitor 1: Slightly smaller (70-90% size)
+    size_factor_1 = 0.7 + (hash(niche) % 20) / 100  # 0.70-0.90
+    comp1_subs = int(subs * size_factor_1)
+    comp1_views = int(avg_views * (size_factor_1 * 0.9))
+    comp1_growth = max(0, growth_pct - 3 + (hash(niche[:2]) % 6))
+    
+    competitors.append({
+        "name": f"Channel A ({niche})",
+        "subscribers": f"{comp1_subs / 1000000:.1f}M" if comp1_subs >= 1000000 else f"{comp1_subs / 1000:.0f}K",
+        "avg_views": f"{comp1_views / 1000000:.1f}M" if comp1_views >= 1000000 else f"{comp1_views / 1000:.0f}K",
+        "growth_rate": f"+{comp1_growth:.0f}%",
+        "content_strategy": "More frequent uploads, shorter format",
+        "strengths": ["Consistent schedule", "Strong community"],
+        "positioning": "Volume-focused with daily/frequent content"
+    })
+    
+    # Competitor 2: Similar size (90-110%)
+    size_factor_2 = 0.9 + (hash(niche[::-1]) % 20) / 100  # 0.90-1.10
+    comp2_subs = int(subs * size_factor_2)
+    comp2_views = int(avg_views * (size_factor_2 * 1.1))
+    comp2_growth = growth_pct + ((hash(niche[1:]) % 8) - 4)
+    
+    competitors.append({
+        "name": f"Channel B ({niche})",
+        "subscribers": f"{comp2_subs / 1000000:.1f}M" if comp2_subs >= 1000000 else f"{comp2_subs / 1000:.0f}K",
+        "avg_views": f"{comp2_views / 1000000:.1f}M" if comp2_views >= 1000000 else f"{comp2_views / 1000:.0f}K",
+        "growth_rate": f"+{max(0, comp2_growth):.0f}%",
+        "content_strategy": "Premium production, less frequent",
+        "strengths": ["High production quality", "Strong brand"],
+        "positioning": "Quality over quantity, premium positioning"
+    })
+    
+    # Competitor 3: Larger (150-200% size)
+    size_factor_3 = 1.5 + (hash(niche[::2]) % 50) / 100  # 1.50-2.00
+    comp3_subs = int(subs * size_factor_3)
+    comp3_views = int(avg_views * (size_factor_3 * 1.2))
+    comp3_growth = max(0, growth_pct - 2 + (hash(niche) % 5))
+    
+    competitors.append({
+        "name": f"Channel C ({niche})",
+        "subscribers": f"{comp3_subs / 1000000:.1f}M" if comp3_subs >= 1000000 else f"{comp3_subs / 1000:.0f}K",
+        "avg_views": f"{comp3_views / 1000000:.1f}M" if comp3_views >= 1000000 else f"{comp3_views / 1000:.0f}K",
+        "growth_rate": f"+{comp3_growth:.0f}%",
+        "content_strategy": "Team production, multiple series",
+        "strengths": ["Diverse revenue streams", "Large team"],
+        "positioning": "Market leader with established brand authority"
+    })
+    
+    return competitors
 
 
-def _generate_video_recommendations(niche: str, rpm: float) -> list:
-    """Generate next 10 video ideas with high revenue potential"""
-    # Base video ideas on niche
-    tech_ideas = [
-        "Ultimate Productivity Setup Tour 2025",
-        "I Built My Dream Studio - Full Breakdown",
-        "Tech That Changed My Life in 2024",
-        "Budget vs Premium: Does It Matter?",
-        "Behind the Scenes: How I Make Videos",
-        "My Honest Opinion on [Trending Product]",
-        "The Future of [Niche Topic]",
-        "What I Wish I Knew Before Starting",
-        "Reacting to Your Setup Submissions",
-        "Why I Switched to [Alternative Product]"
-    ]
-    
+def _generate_video_recommendations(niche: str, rpm: float, videos: list = None, avg_views: int = 0) -> list:
+    """Generate next 10 video ideas with high revenue potential based on creator's actual performance"""
     ideas = []
-    for i, title in enumerate(tech_ideas):
-        cpm = rpm * (0.9 + (i % 3) * 0.1)  # Vary CPM slightly
-        potential = "Very High" if i < 3 else "High" if i < 7 else "Medium"
+    
+    # Analyze what works for this creator
+    top_performing_topics = []
+    if videos and len(videos) >= 5:
+        # Extract topics from top performing videos
+        sorted_videos = sorted([v for v in videos if not v.get("is_short")], 
+                              key=lambda x: x.get("views", 0), reverse=True)[:5]
+        for video in sorted_videos:
+            title = video.get("title", "")
+            # Extract key words (simplified topic extraction)
+            words = title.lower().split()
+            # Get meaningful words (skip common words)
+            skip_words = {'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'and', 'or', 'but', 'my', 'i', 'you'}
+            meaningful_words = [w for w in words if w not in skip_words and len(w) > 3]
+            if meaningful_words:
+                top_performing_topics.extend(meaningful_words[:3])
+    
+    # Generate ideas based on niche and performance
+    niche_lower = niche.lower()
+    
+    # Base templates that adapt to niche
+    if "tech" in niche_lower or "review" in niche_lower:
+        base_ideas = [
+            f"Ultimate {niche} Setup Tour 2025",
+            f"I Spent $10,000 on {niche} - Was It Worth It?",
+            f"Why Everyone's Wrong About [Trending {niche} Product]",
+            f"My Honest {niche} Tier List - Ranked",
+            f"Behind the Scenes: How I Make {niche} Content",
+            "Budget vs Premium: The Truth Nobody Tells You",
+            f"The Future of {niche} - My Predictions",
+            f"Reacting to Your {niche} Submissions",
+            f"I Switched to [Alternative] and Here's What Happened",
+            f"What I Wish I Knew Before Starting {niche}"
+        ]
+    elif "gaming" in niche_lower or "esports" in niche_lower:
+        base_ideas = [
+            "I Trained Like a Pro for 30 Days",
+            "100 Hours of [Popular Game] - What I Learned",
+            "Rank 1 vs Beginners - Can They Tell?",
+            "Secret Strategies Pro Players Don't Want You to Know",
+            "I Challenged the Best Player in the World",
+            "Game Settings That Changed Everything",
+            "From Noob to Pro - 30 Day Transformation",
+            "Why Everyone Plays This Wrong",
+            "Reacting to My First Ever Gameplay",
+            "The Most Broken Strategy Right Now"
+        ]
+    else:
+        # Generic ideas that work for any niche
+        base_ideas = [
+            f"The Ultimate {niche} Guide for 2025",
+            f"My Honest Opinion on {niche} (Controversial)",
+            f"Behind the Scenes: {niche} Reality",
+            f"Things Nobody Tells You About {niche}",
+            f"I Tried {niche} for 30 Days - Here's What Happened",
+            f"{niche} Mistakes That Cost Me $10,000",
+            f"Reacting to Viewer {niche} Submissions",
+            f"The Truth About {niche} Nobody Talks About",
+            f"How I {niche} in 2025",
+            f"Why I'm Changing My {niche} Strategy"
+        ]
+    
+    # If we have top performing topics, integrate them
+    if top_performing_topics:
+        # Replace some generic ideas with topic-specific ones
+        for i in range(min(3, len(top_performing_topics))):
+            if i < len(base_ideas):
+                topic = top_performing_topics[i].title()
+                base_ideas[i] = f"{topic} Deep Dive - Everything You Need to Know"
+    
+    # Generate final ideas with CPM and potential
+    for i, title in enumerate(base_ideas):
+        # Vary CPM based on topic type and position
+        cpm = rpm * (0.85 + (i % 4) * 0.15)
+        
+        # Determine potential based on typical performance
+        if avg_views > 1000000:
+            potential = "Very High" if i < 3 else "High" if i < 7 else "Medium"
+            reasoning = "Proven high-engagement format + large audience base"
+        elif avg_views > 100000:
+            potential = "High" if i < 4 else "Medium" if i < 8 else "Good"
+            reasoning = "Strong topic alignment with your successful content"
+        else:
+            potential = "Medium" if i < 5 else "Good"
+            reasoning = "Growth opportunity with audience-tested format"
         
         ideas.append({
             "title": title,
             "estimated_cpm": f"${cpm:.2f}",
             "revenue_potential": potential,
             "growth_potential": potential,
-            "reasoning": "Strong audience interest + high advertiser demand" if i < 5 
-                        else "Proven format with consistent performance"
+            "reasoning": reasoning
         })
     
     return ideas
@@ -585,82 +673,127 @@ def _generate_revenue_diversification(subs: int, rpm: float, tf_180: dict) -> di
     }
 
 
-def _generate_growth_action_plan(cadence: int, growth_pct: float, active_platforms: int) -> list:
-    """Generate 30-day growth action plan"""
+def _generate_growth_action_plan(cadence: int, growth_pct: float, active_platforms: int, subs: int = 0, avg_views: int = 0) -> list:
+    """Generate personalized 30-day growth action plan based on creator metrics"""
     actions = []
     
-    # Content optimization
-    if cadence > 5:
-        actions.append({
-            "action": "Increase upload frequency to 2-3x per week",
-            "impact": "High",
-            "effort": "High",
-            "timeline": "Ongoing",
-            "rationale": "More frequent uploads = more chances for algorithm pickup"
-        })
+    # Analyze current state and prioritize actions
+    engagement_rate = (avg_views / subs * 100) if subs > 0 else 0
     
-    # Engagement optimization
+    # Priority 1: CTR/Thumbnail optimization (works for everyone)
     actions.append({
-        "action": "Optimize thumbnails for 10%+ CTR improvement",
+        "action": "A/B test thumbnails for 10%+ CTR improvement",
         "impact": "Very High",
         "effort": "Medium",
         "timeline": "Week 1-2",
-        "rationale": "CTR is the #1 factor in initial algorithm promotion"
+        "rationale": "CTR is the #1 factor in algorithm promotion. Even 1% improvement = 10-20% more views"
     })
     
-    # Title optimization
-    actions.append({
-        "action": "A/B test titles in first 48 hours post-upload",
-        "impact": "High",
-        "effort": "Low",
-        "timeline": "Ongoing",
-        "rationale": "YouTube allows title changes without penalty in first 48h"
-    })
-    
-    # Cross-platform
-    if active_platforms < 3:
+    # Priority 2: Upload frequency (if too low)
+    if cadence > 7:  # Less than once per week
         actions.append({
-            "action": "Launch content repurposing on TikTok/Instagram",
+            "action": f"Increase upload frequency from {cadence} to 5-7 days",
+            "impact": "Very High",
+            "effort": "High",
+            "timeline": "Ongoing",
+            "rationale": "More uploads = more chances for viral hits. Aim for 2-3x/week for max growth"
+        })
+    elif cadence > 3:  # Less than 2x per week
+        actions.append({
+            "action": f"Optimize upload consistency to 2-3x weekly",
             "impact": "High",
             "effort": "Medium",
-            "timeline": "Week 2-3",
-            "rationale": "Shorts drive discoverability and reduce platform risk"
+            "timeline": "Ongoing",
+            "rationale": "Consistent schedule trains audience to expect content, improving retention"
         })
     
-    # Community building
+    # Priority 3: Title optimization
     actions.append({
-        "action": "Reply to 100% of comments in first 2 hours",
-        "impact": "Medium",
+        "action": "Test 3 different titles in first 48 hours post-upload",
+        "impact": "High",
         "effort": "Low",
-        "timeline": "Ongoing",
-        "rationale": "Early engagement signals quality content to algorithm"
+        "timeline": "Every upload",
+        "rationale": "YouTube allows title changes without penalty in first 48h. Use data to optimize"
     })
     
-    # SEO optimization
-    actions.append({
-        "action": "Update older video titles/descriptions for SEO",
-        "impact": "Medium",
-        "effort": "Low",
-        "timeline": "Week 3-4",
-        "rationale": "Improve long-tail search traffic from catalog content"
-    })
+    # Priority 4: Cross-platform strategy
+    if active_platforms < 2:
+        actions.append({
+            "action": "Launch Shorts/TikTok with repurposed content",
+            "impact": "Very High",
+            "effort": "Medium",
+            "timeline": "Week 2-3",
+            "rationale": "Shorts drive 40-60% of new subscriber growth. Low effort, high impact"
+        })
+    elif active_platforms < 3:
+        actions.append({
+            "action": "Expand to Instagram Reels for maximum reach",
+            "impact": "High",
+            "effort": "Low",
+            "timeline": "Week 2-3",
+            "rationale": "Reels algorithm is extremely generous. Cross-post with minimal effort"
+        })
     
-    # Collaboration
+    # Priority 5: Engagement tactics
+    if engagement_rate < 10:  # Low engagement
+        actions.append({
+            "action": "Reply to ALL comments in first 2 hours + pin best comment",
+            "impact": "High",
+            "effort": "Low",
+            "timeline": "Every upload",
+            "rationale": "Early engagement signals quality to algorithm. 2-hour window is critical"
+        })
+    
+    # Priority 6: Catalog optimization
+    if subs > 10000:  # Worth optimizing catalog
+        actions.append({
+            "action": "Update top 10 video titles/thumbnails for SEO",
+            "impact": "Medium",
+            "effort": "Low",
+            "timeline": "Week 3-4",
+            "rationale": "Old videos drive 30-40% of views. Small tweaks = long-term traffic boost"
+        })
+    
+    # Priority 7: Collaboration
     actions.append({
         "action": "Reach out to 5 similar-sized creators for collabs",
         "impact": "High",
         "effort": "Medium",
         "timeline": "Week 2-4",
-        "rationale": "Collaborations expose you to new aligned audiences"
+        "rationale": "Collabs expose you to aligned audiences. Aim for 80-120% of your size"
     })
     
-    # Analytics review
+    # Priority 8: Posting time optimization
     actions.append({
-        "action": "Weekly analytics review - double down on what works",
+        "action": "Test posting at different times (2 PM, 5 PM, 8 PM local)",
+        "impact": "Medium",
+        "effort": "Low",
+        "timeline": "Week 1-4",
+        "rationale": "Posting time affects first-hour performance, which determines algorithm push"
+    })
+    
+    # Priority 9: Retention hooks
+    actions.append({
+        "action": "Add pattern interrupt every 30 seconds in next 3 videos",
+        "impact": "High",
+        "effort": "Medium",
+        "timeline": "Week 1-3",
+        "rationale": "Retention is king. Visual/audio changes every 30s keep viewers engaged"
+    })
+    
+    # Priority 10: Analytics review
+    actions.append({
+        "action": "Weekly analytics deep dive - identify & double down on winners",
         "impact": "Very High",
         "effort": "Low",
         "timeline": "Every Monday",
-        "rationale": "Data-driven decisions compound over time"
+        "rationale": "Data beats guessing. Find patterns in your top 10% and replicate ruthlessly"
     })
     
-    return actions
+    # Prioritize based on impact and current state
+    # Sort by impact (Very High > High > Medium)
+    impact_order = {"Very High": 0, "High": 1, "Medium": 2, "Good": 3}
+    actions.sort(key=lambda x: impact_order.get(x["impact"], 4))
+    
+    # Return top 8 actions
+    return actions[:8]
