@@ -16,7 +16,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-
+  server: {
+    port: 3000,
+    host: true, // Listen on all addresses
+    strictPort: true,
+    allowedHosts: [
+      'quickstart-guide-6.cluster-8.preview.emergentcf.cloud',
+      'quickstart-guide-6.preview.emergentagent.com',
+      '.preview.emergentagent.com',
+      '.emergentcf.cloud'
+    ],
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss',
+    },
+  },
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
