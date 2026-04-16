@@ -62,7 +62,7 @@ export function getStoredReport(userEmail?: string | null): StoredReportSummary 
 
     // Support both old and new field names
     const forecast = report?.view_forecast_millions ?? report?.view_forecast_millions_180_days ?? {};
-    const revScenarios = report?.revenue_scenarios_ypp ?? {};
+    const revScenarios = report?.revenue_scenarios_adsense ?? report?.revenue_scenarios_ypp ?? {};
     const oldRevenue = report?.revenue_scenarios_180_days_youtube_only ?? {};
     const risk = report?.risk_factor_analysis ?? {};
 
@@ -146,7 +146,7 @@ export function getStoredReport(userEmail?: string | null): StoredReportSummary 
       aiAssessmentNarrative: narrative,
       strengths: aiAssessment.strengths ?? [],
       watchFactors: aiAssessment.watch_factors ?? [],
-      estimatedMonthlyIncome: aiAssessment.estimated_monthly_ypp_income ?? '',
+      estimatedMonthlyIncome: aiAssessment.estimated_monthly_adsense_income ?? aiAssessment.estimated_monthly_ypp_income ?? '',
     };
   } catch {
     return null;
