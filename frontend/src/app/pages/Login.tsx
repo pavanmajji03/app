@@ -519,7 +519,7 @@ export function Login() {
           <div className="flex flex-wrap gap-2 justify-center mb-10">
             <FeaturePill icon={BarChart2} label="AI Underwriting" />
             <FeaturePill icon={Zap} label="Instant Funding" />
-            <FeaturePill icon={Users} label="3,800+ Investors" />
+            <FeaturePill icon={Users} label="30+ Early Investors" />
           </div>
 
           {/* Stats */}
@@ -532,9 +532,10 @@ export function Login() {
             }}
           >
             {[
-              { val: '142', label: 'Creators' },
-              { val: '$2.4M', label: 'Funded' },
-              { val: '94%', label: 'Accuracy' },
+              { val: '20+', label: 'Creators Interested' },
+              { val: '30+', label: 'Fan Investors' },
+              { val: '$15K', label: 'Ready to Invest' },
+              { val: '94%', label: 'AI Accuracy' },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className="text-2xl font-black" style={{ color: palette.primary }}>{s.val}</p>
