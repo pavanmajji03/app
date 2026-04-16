@@ -261,7 +261,7 @@ async def build_report(
     confidence = sc.get("confidence_score", 0)
     data_points = sc.get("data_points_count", 0)
 
-    return {
+    report = {
         "ai_underwriting_report": {
             "channel_name": ch.get("name", "Unknown"),
             "handle": ch.get("handle", ""),
