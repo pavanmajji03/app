@@ -15,6 +15,7 @@ import { CampaignLive } from './pages/CampaignLive';
 import { CampaignPublic } from './pages/CampaignPublic';
 import { StyleGuide } from './pages/StyleGuide';
 import { AboutUs } from './pages/AboutUs';
+import { Watchlist } from './pages/Watchlist';
 import { PitchVideo } from './pages/PitchVideo';
 import { PitchV2 } from './pages/PitchV2';
 import { PitchV3 } from './pages/PitchV3';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'marketplace', Component: Marketplace },
       { path: 'creator', Component: CreatorPage },
       { path: 'portfolio', Component: Portfolio },
+      { path: 'watchlist', element: <FanGuard><Watchlist /></FanGuard> },
       { path: 'statement', Component: Statement },
       { path: 'onboard', element: <CreatorGuard><CreatorOnboarding /></CreatorGuard> },
       { path: 'analysis', Component: CreatorAnalysis },

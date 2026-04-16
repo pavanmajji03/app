@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { callApi } from '../services/apiService';
-import { TrendingUp, Users, DollarSign, Zap, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Zap, Lock, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface PublicCampaign {
   campaign_id: string;
@@ -32,7 +32,11 @@ export function CampaignPublic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Creator info comes from the campaign API — no local fallback needed
+  // Invest state
+  const [amount, setAmount] = useState(100);
+  const [investing, setInvesting] = useState(false);
+  const [invested, setInvested] = useState(false);
+  const [investError, setInvestError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) { setError('Invalid campaign link.'); setLoading(false); return; }
@@ -41,15 +45,35 @@ export function CampaignPublic() {
       .catch(() => { setError('Campaign not found or no longer active.'); setLoading(false); });
   }, [id]);
 
-  const handleInvest = () => {
+  const handleInvest = async () => {
     if (!user) {
-      // Save intended destination, redirect to login
       sessionStorage.setItem('fanfolio_post_login_redirect', `/campaign/${id}`);
       navigate('/login');
       return;
     }
-    // Logged in — go to creator page which has the invest flow
-    navigate(`/creator?campaign_id=${id}`);
+    if (!campaign) return;
+    if (invested) { navigate('/portfolio'); return; }
+
+    setInvesting(true);
+    setInvestError(null);
+    try {
+      await callApi('investInCampaign_CreatorPage', {
+        pathParams: { campaign_id: campaign.campaign_id },
+        payload: { fan_email: user.email, fan_name: user.name ?? user.email, amount },
+      });
+      setInvested(true);
+      // Update local raised_amount and investor_count optimistically
+      setCampaign(prev => prev ? {
+        ...prev,
+        raised_amount: prev.raised_amount + amount,
+        investor_count: prev.investor_count + 1,
+      } : prev);
+      setTimeout(() => navigate('/portfolio'), 1500);
+    } catch {
+      setInvestError('Backing failed — please try again.');
+    } finally {
+      setInvesting(false);
+    }
   };
 
   if (loading) {
@@ -212,18 +236,93 @@ export function CampaignPublic() {
           ))}
         </div>
 
-        {/* CTA */}
-        <button
-          onClick={handleInvest}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base"
-          style={{ background: palette.gradient, color: palette.onPrimary }}
-        >
-          {user ? <><ArrowRight size={18} /> Back This Creator</> : <><Lock size={16} /> Sign In to Back</>}
-        </button>
-        {!user && (
-          <p className="text-xs text-center mt-2" style={{ color: palette.textSubtle }}>
-            Free to join · No real money involved · Simulation only
-          </p>
+        {/* Invest panel */}
+        {user ? (
+          <div className="rounded-2xl p-5 mb-2" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <h3 className="font-bold mb-4" style={{ color: palette.text }}>Simulate Your Backing</h3>
+
+            {/* Amount input */}
+            <div className="mb-3">
+              <label className="text-xs font-semibold mb-1.5 block" style={{ color: palette.textMuted }}>Backing Amount</label>
+              <div className="relative mb-2">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold" style={{ color: palette.textMuted }}>$</span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={e => setAmount(Math.max(10, Math.min(10000, Number(e.target.value))))}
+                  disabled={invested}
+                  className="w-full pl-7 pr-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+                  style={{ backgroundColor: palette.surfaceAlt, color: palette.text, border: `1px solid ${palette.border}` }}
+                />
+              </div>
+              <input
+                type="range" min={10} max={10000} step={10}
+                value={amount}
+                onChange={e => setAmount(Number(e.target.value))}
+                disabled={invested}
+                className="w-full"
+                style={{ accentColor: palette.primary }}
+              />
+            </div>
+
+            {/* Return preview */}
+            {campaign && (
+              <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+                {[
+                  { label: 'Conservative', pct: campaign.return_low ?? 0 },
+                  { label: 'Base',         pct: campaign.return_base ?? 0 },
+                  { label: 'Optimistic',   pct: campaign.return_high ?? 0 },
+                ].map(s => {
+                  const ret = Math.round((amount * s.pct) / 100);
+                  const color = s.pct >= 0 ? palette.success : palette.danger;
+                  return (
+                    <div key={s.label} className="p-2.5 rounded-xl" style={{ backgroundColor: palette.surfaceAlt }}>
+                      <p className="text-xs font-black" style={{ color }}>{ret >= 0 ? '+' : ''}${Math.abs(ret)}</p>
+                      <p className="text-xs" style={{ color: palette.textSubtle }}>{s.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {investError && (
+              <p className="text-xs text-center mb-2" style={{ color: palette.danger }}>{investError}</p>
+            )}
+
+            <button
+              onClick={handleInvest}
+              disabled={investing || invested}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm"
+              style={{
+                background: invested ? `${palette.success}22` : palette.gradient,
+                color: invested ? palette.success : palette.onPrimary,
+                opacity: investing ? 0.7 : 1,
+              }}
+            >
+              {invested
+                ? <><CheckCircle2 size={16} /> Backed! Redirecting to portfolio…</>
+                : investing
+                ? <><Loader2 size={16} className="animate-spin" /> Processing…</>
+                : <><ArrowRight size={16} /> Back This Creator · ${amount.toLocaleString()}</>
+              }
+            </button>
+            <p className="text-center text-xs mt-2" style={{ color: palette.textSubtle }}>
+              Simulation only — no real money involved
+            </p>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleInvest}
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base"
+              style={{ background: palette.gradient, color: palette.onPrimary }}
+            >
+              <Lock size={16} /> Sign In to Back This Creator
+            </button>
+            <p className="text-xs text-center mt-2" style={{ color: palette.textSubtle }}>
+              Free to join · No real money involved · Simulation only
+            </p>
+          </>
         )}
       </div>
     </div>

@@ -37,6 +37,12 @@ interface AuthContextType {
 }
 
 const SESSION_KEY = 'fanzfolio_session';
+// Unscoped session keys that must be cleared on every sign-in/sign-out
+const SESSION_TRANSIENT_KEYS = ['fanfolio_report', 'fanfolio_analysis_id'];
+
+function clearTransientSession() {
+  SESSION_TRANSIENT_KEYS.forEach(k => sessionStorage.removeItem(k));
+}
 
 function loadSession(): AuthUser | null {
   try {
@@ -53,11 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(loadSession);
 
   const signIn = useCallback((u: AuthUser) => {
+    clearTransientSession(); // wipe any previous creator's report/analysis
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(u));
     setUser(u);
   }, []);
 
   const signOut = useCallback(() => {
+    clearTransientSession();
     sessionStorage.removeItem(SESSION_KEY);
     setUser(null);
   }, []);

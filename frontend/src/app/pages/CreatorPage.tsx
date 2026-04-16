@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { callApi } from '../services/apiService';
@@ -35,6 +35,7 @@ function RiskBar({ label, value, inverse = false }: { label: string; value: numb
 
 interface RealCampaign {
   campaign_id: string;
+  analysis_id?: string | null;
   term_months: number;
   revenue_share_pct: number;
   target_amount: number;
@@ -43,6 +44,11 @@ interface RealCampaign {
   return_low: number;
   return_base: number;
   return_high: number;
+  // Enriched fields returned by GET /campaigns/{id}
+  creator_name?: string;
+  creator_handle?: string;
+  creator_thumbnail?: string;
+  ai_score?: number;
 }
 
 function PayoutCalculator({ creator, campaign }: { creator: Creator; campaign: RealCampaign | null }) {
@@ -220,11 +226,15 @@ export function CreatorPage() {
   const { palette } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'report' | 'investors'>('overview');
   const [creator, setCreator] = useState<Creator | null>(null);
   const [investors, setInvestors] = useState<InvestorActivity[]>([]);
   const [campaign, setCampaign] = useState<RealCampaign | null>(null);
   const stored = getStoredReport(user?.email);
+
+  // campaign_id from URL param (fan arriving from CampaignPublic)
+  const urlCampaignId = new URLSearchParams(location.search).get('campaign_id');
 
   // If analysis is still running (analysis_id exists but no completed report), send them back
   useEffect(() => {
@@ -235,13 +245,11 @@ export function CreatorPage() {
     }
   }, [user, stored, navigate]);
 
+  // Effect 1: load creator report data (creator's own page only)
   useEffect(() => {
-    if (!stored) return; // don't load mock data while analysis is running
-    // Merge real report data over mock creator fields
+    if (!stored) return;
     callApi<Creator[]>('getCreator_CreatorPage').then(res => {
       const mock = res.data[0];
-      if (!stored) { setCreator(mock); return; }
-
       setCreator({
         ...mock,
         name: stored.channelName,
@@ -274,27 +282,48 @@ export function CreatorPage() {
         },
       });
     });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Load real campaign by analysis_id if available
-    const analysisId = sessionStorage.getItem('fanfolio_analysis_id');
-    if (analysisId) {
-      callApi<RealCampaign>('getCampaignByAnalysis_CreatorPage', { pathParams: { analysis_id: analysisId } })
-        .then(res => {
-          setCampaign(res.data);
-          // Load real investors for this campaign
-          callApi<InvestorActivity[]>(
-            'getCampaignInvestments_CreatorPage',
-            { pathParams: { campaign_id: res.data.campaign_id } }
-          ).then(inv => setInvestors(inv.data)).catch(() => {});
-        })
-        .catch(() => {
-          // Fall back to mock investors
-          callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(res => setInvestors(res.data));
-        });
+  // Effect 2: load campaign — always runs (fan via URL param OR creator via analysis_id)
+  useEffect(() => {
+    const loadAndSetCampaign = (c: RealCampaign) => {
+      setCampaign(c);
+      // If no stored report (fan view), build a minimal creator from campaign API data
+      if (!stored) {
+        callApi<Creator[]>('getCreator_CreatorPage').then(res => {
+          const mock = res.data[0];
+          setCreator({
+            ...mock,
+            name: c.creator_name || mock.name,
+            handle: c.creator_handle || mock.handle,
+            image: c.creator_thumbnail || mock.image,
+            aiScore: c.ai_score || mock.aiScore,
+          });
+        }).catch(() => {});
+      }
+      callApi<InvestorActivity[]>(
+        'getCampaignInvestments_CreatorPage',
+        { pathParams: { campaign_id: c.campaign_id } }
+      ).then(inv => setInvestors(inv.data)).catch(() => {
+        callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(r => setInvestors(r.data));
+      });
+    };
+
+    if (urlCampaignId) {
+      callApi<RealCampaign>('getCampaign_CampaignLive', { pathParams: { campaign_id: urlCampaignId } })
+        .then(res => loadAndSetCampaign(res.data))
+        .catch(() => {});
     } else {
-      callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(res => setInvestors(res.data));
+      const analysisId = sessionStorage.getItem('fanfolio_analysis_id');
+      if (analysisId) {
+        callApi<RealCampaign>('getCampaignByAnalysis_CreatorPage', { pathParams: { analysis_id: analysisId } })
+          .then(res => loadAndSetCampaign(res.data))
+          .catch(() => callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(r => setInvestors(r.data)));
+      } else {
+        callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(r => setInvestors(r.data));
+      }
     }
-  }, []);
+  }, [urlCampaignId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!creator) return null;
 

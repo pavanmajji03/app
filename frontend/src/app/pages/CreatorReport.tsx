@@ -124,30 +124,59 @@ export function CreatorReport() {
   const { user } = useAuth();
   const [channel, setChannel] = useState<AnalysisChannel | null>(null);
   const [liveCampaign, setLiveCampaign] = useState<LiveCampaignInfo | null>(null);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
-    // Priority: sessionStorage (just analysed) → localStorage (returning user)
+    // Priority 1: sessionStorage (just analysed this session)
     const fromSession = sessionStorage.getItem('fanfolio_report');
     if (fromSession) {
       try { setChannel(JSON.parse(fromSession)); return; } catch { /* fall through */ }
     }
+
+    // Priority 2: localStorage (returning user, same browser)
     if (user?.email) {
       const fromLocal = localStorage.getItem(`fanfolio_creator_report_${user.email}`);
       if (fromLocal) {
         try {
           const parsed = JSON.parse(fromLocal);
           sessionStorage.setItem('fanfolio_report', fromLocal);
-          // Also restore analysis_id to sessionStorage
           const storedAnalysisId = localStorage.getItem(`fanfolio_analysis_id_${user.email}`);
-          if (storedAnalysisId) {
-            sessionStorage.setItem('fanfolio_analysis_id', storedAnalysisId);
-          }
+          if (storedAnalysisId) sessionStorage.setItem('fanfolio_analysis_id', storedAnalysisId);
           setChannel(parsed);
           return;
         } catch { /* fall through */ }
       }
     }
-    // No real report found — redirect to onboard so user runs analysis
+
+    // Priority 3: re-fetch from backend using stored analysis_id (new device / cleared storage)
+    const analysisId =
+      sessionStorage.getItem('fanfolio_analysis_id') ||
+      (user?.email ? localStorage.getItem(`fanfolio_analysis_id_${user.email}`) : null);
+
+    if (analysisId) {
+      setRecovering(true);
+      callApi<{ status: string; report: unknown }>(
+        'pollAnalysis_CreatorAnalysis',
+        { pathParams: { analysis_id: analysisId } }
+      )
+        .then(res => {
+          if (res.data?.status === 'completed' && res.data.report) {
+            const reportJson = JSON.stringify(res.data.report);
+            sessionStorage.setItem('fanfolio_report', reportJson);
+            if (user?.email) {
+              localStorage.setItem(`fanfolio_creator_report_${user.email}`, reportJson);
+            }
+            setChannel(res.data.report as AnalysisChannel);
+          } else {
+            navigate('/onboard', { replace: true });
+          }
+        })
+        .catch(() => navigate('/onboard', { replace: true }))
+        .finally(() => setRecovering(false));
+      return;
+    }
+
+    // No report source found — send to onboarding
     navigate('/onboard', { replace: true });
   }, [user, navigate]);
 
@@ -172,6 +201,13 @@ export function CreatorReport() {
     sessionStorage.removeItem('fanfolio_anim_done');
     navigate('/onboard');
   };
+
+  if (recovering) return (
+    <div className="flex items-center justify-center min-h-[60vh] gap-3" style={{ color: palette.textMuted }}>
+      <RefreshCw size={18} className="animate-spin" />
+      <span className="text-sm">Restoring your report…</span>
+    </div>
+  );
 
   if (!channel) return null;
 

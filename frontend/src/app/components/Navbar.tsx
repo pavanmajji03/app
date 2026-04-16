@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { useTheme, palettes } from '../context/ThemeContext';
 import type { PaletteKey } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, BarChart2, LogOut, Palette, ChevronDown } from 'lucide-react';
+import { TrendingUp, BarChart2, LogOut, Palette, ChevronDown, Bookmark } from 'lucide-react';
 
 const paletteKeys: PaletteKey[] = ['midnight', 'ocean', 'forest', 'luxe'];
 const paletteColors: Record<PaletteKey, string> = {
@@ -165,17 +165,30 @@ export function Navbar() {
       {/* Right side */}
       <div className="flex items-center gap-3">
         {user?.role === 'fan' && (
-          <button
-            onClick={() => navigate('/portfolio')}
-            className="hidden md:flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors"
-            style={{
-              color: isActive('/portfolio') ? palette.primary : palette.textMuted,
-              backgroundColor: isActive('/portfolio') ? `${palette.primary}18` : 'transparent',
-            }}
-          >
-            <BarChart2 size={14} />
-            Portfolio
-          </button>
+          <>
+            <button
+              onClick={() => navigate('/watchlist')}
+              className="hidden md:flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: isActive('/watchlist') ? palette.primary : palette.textMuted,
+                backgroundColor: isActive('/watchlist') ? `${palette.primary}18` : 'transparent',
+              }}
+            >
+              <Bookmark size={14} />
+              Watchlist
+            </button>
+            <button
+              onClick={() => navigate('/portfolio')}
+              className="hidden md:flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: isActive('/portfolio') ? palette.primary : palette.textMuted,
+                backgroundColor: isActive('/portfolio') ? `${palette.primary}18` : 'transparent',
+              }}
+            >
+              <BarChart2 size={14} />
+              Portfolio
+            </button>
+          </>
         )}
 
         {user ? (
