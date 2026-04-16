@@ -220,10 +220,26 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+const STORAGE_KEY = 'fanfolio_theme';
+
+function loadTheme(): PaletteKey {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY) as PaletteKey | null;
+    if (saved && saved in palettes) return saved;
+  } catch { /* localStorage unavailable */ }
+  return 'midnight';
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [paletteKey, setPaletteKey] = useState<PaletteKey>('midnight');
+  const [paletteKey, setPaletteKey] = useState<PaletteKey>(loadTheme);
+
+  const setPalette = (key: PaletteKey) => {
+    try { localStorage.setItem(STORAGE_KEY, key); } catch { /* ignore */ }
+    setPaletteKey(key);
+  };
+
   return (
-    <ThemeContext.Provider value={{ palette: palettes[paletteKey], paletteKey, setPalette: setPaletteKey }}>
+    <ThemeContext.Provider value={{ palette: palettes[paletteKey], paletteKey, setPalette }}>
       {children}
     </ThemeContext.Provider>
   );
