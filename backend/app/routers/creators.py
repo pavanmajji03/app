@@ -102,7 +102,7 @@ async def get_analysis(analysis_id: str, db: AsyncSession = Depends(get_db)):
 
     report = None
     if analysis.status == "completed":
-        report = build_report(
+        report = await build_report(
             youtube_data=analysis.youtube_data,
             instagram_data=analysis.instagram_data,
             trends_data=analysis.trends_data,
