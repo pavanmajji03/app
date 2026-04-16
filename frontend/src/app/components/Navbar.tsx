@@ -5,12 +5,14 @@ import type { PaletteKey } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { TrendingUp, BarChart2, LogOut, Palette, ChevronDown, Bookmark } from 'lucide-react';
 
-const paletteKeys: PaletteKey[] = ['midnight', 'ocean', 'forest', 'luxe'];
+const paletteKeys: PaletteKey[] = ['midnight', 'ocean', 'forest', 'luxe', 'vibeon', 'light'];
 const paletteColors: Record<PaletteKey, string> = {
   midnight: '#8B3DFF',
   ocean: '#2563EB',
   forest: '#00C896',
   luxe: '#E8B423',
+  vibeon: '#7C3AED',
+  light: '#0B1F3A',
 };
 
 function UserDropdown({ onClose }: { onClose: () => void }) {
@@ -36,7 +38,7 @@ function UserDropdown({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={ref}
-      className="absolute top-full right-0 mt-2 w-64 rounded-2xl overflow-hidden z-[100]"
+      className="absolute top-full right-0 mt-2 w-72 rounded-2xl overflow-hidden z-[100]"
       style={{
         backgroundColor: palette.surface,
         border: `1px solid ${palette.border}`,
@@ -69,7 +71,7 @@ function UserDropdown({ onClose }: { onClose: () => void }) {
           <Palette size={12} style={{ color: palette.textSubtle }} />
           <p className="text-xs font-semibold tracking-wider" style={{ color: palette.textSubtle }}>THEME</p>
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
           {paletteKeys.map(key => {
             const p = palettes[key];
             const isSelected = paletteKey === key;
@@ -83,7 +85,7 @@ function UserDropdown({ onClose }: { onClose: () => void }) {
                   border: `1px solid ${isSelected ? p.primary : 'transparent'}`,
                 }}
               >
-                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: paletteColors[key] }} />
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: paletteColors[key], border: key === 'light' ? '1.5px solid #CBD5E1' : 'none' }} />
                 <span className="text-xs font-medium" style={{ color: isSelected ? p.primary : palette.textMuted }}>{p.name}</span>
               </button>
             );

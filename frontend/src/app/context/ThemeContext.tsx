@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-export type PaletteKey = 'midnight' | 'ocean' | 'forest' | 'luxe';
+export type PaletteKey = 'midnight' | 'ocean' | 'forest' | 'luxe' | 'vibeon' | 'light';
 
 export interface Palette {
   key: PaletteKey;
@@ -143,6 +143,72 @@ export const palettes: Record<PaletteKey, Palette> = {
     chart2: '#C4A5FF',
     chart3: '#4ADE80',
     swatches: ['#09090F', '#141420', '#E8B423', '#C4A5FF', '#4ADE80'],
+  },
+
+  // ── Vibeon dark brand theme ──────────────────────────────────────────────────
+  // Primary trust base: Deep Navy #0B1F3A
+  // Growth/money: Emerald Green #10B981
+  // Creator accent: Purple/Indigo #7C3AED
+  // CTA highlight: Electric Cyan #22D3EE
+  // Background: Near-Black Slate #0F172A
+  vibeon: {
+    key: 'vibeon',
+    name: 'Vibeon',
+    description: 'Brand dark theme — navy trust, emerald growth, electric cyan CTAs.',
+    bg: '#0F172A',
+    surface: '#0B1F3A',
+    surfaceAlt: '#122540',
+    surfaceHover: '#1A3050',
+    border: '#1E3A5C',
+    primary: '#7C3AED',
+    primaryLight: '#A78BFA',
+    primaryDark: '#5B21B6',
+    onPrimary: '#FFFFFF',
+    accent: '#22D3EE',
+    onAccent: '#0B1F3A',
+    text: '#F8FAFC',
+    textMuted: '#94A3B8',
+    textSubtle: '#475569',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#F87171',
+    gradient: 'linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)',
+    accentGradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+    chart1: '#7C3AED',
+    chart2: '#22D3EE',
+    chart3: '#10B981',
+    swatches: ['#0F172A', '#0B1F3A', '#7C3AED', '#22D3EE', '#10B981'],
+  },
+
+  // ── Vibeon light brand theme ─────────────────────────────────────────────────
+  // Same brand color language on a white/light-gray background
+  light: {
+    key: 'light',
+    name: 'Light',
+    description: 'Clean white — same brand colors on a bright, airy canvas.',
+    bg: '#FFFFFF',
+    surface: '#F8FAFC',
+    surfaceAlt: '#F1F5F9',
+    surfaceHover: '#E2E8F0',
+    border: '#CBD5E1',
+    primary: '#0B1F3A',
+    primaryLight: '#1E3A5F',
+    primaryDark: '#060F1E',
+    onPrimary: '#FFFFFF',
+    accent: '#7C3AED',
+    onAccent: '#FFFFFF',
+    text: '#0B1F3A',
+    textMuted: '#475569',
+    textSubtle: '#94A3B8',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    gradient: 'linear-gradient(135deg, #0B1F3A 0%, #1E3A5F 100%)',
+    accentGradient: 'linear-gradient(135deg, #7C3AED 0%, #22D3EE 100%)',
+    chart1: '#0B1F3A',
+    chart2: '#7C3AED',
+    chart3: '#10B981',
+    swatches: ['#FFFFFF', '#F1F5F9', '#0B1F3A', '#7C3AED', '#10B981'],
   },
 };
 
