@@ -391,18 +391,31 @@ def _generate_content_performance(videos: list, niche: str, rpm: float) -> dict:
     
     # Group videos by topic similarity (simplified - in real scenario, use NLP)
     if len(videos) >= 5:
-        sorted_videos = sorted([v for v in videos if not v.get("is_short")], 
-                              key=lambda x: x.get("views", 0), reverse=True)[:10]
+        # Filter out shorts and sort by views
+        regular_videos = [v for v in videos if not v.get("is_short")]
+        
+        # Sort by view_count (numeric field from YouTube API)
+        sorted_videos = sorted(regular_videos, 
+                              key=lambda x: x.get("view_count", 0), 
+                              reverse=True)[:10]
         
         for i, video in enumerate(sorted_videos[:5]):
-            views = video.get("views", 0)
+            views = video.get("view_count", 0)
             title = video.get("title", "")
             # Extract topic from title (first few words)
             topic = " ".join(title.split()[:4]) + "..." if len(title.split()) > 4 else title
             
+            # Format views for display
+            if views >= 1000000:
+                views_str = f"{views / 1000000:.1f}M"
+            elif views >= 1000:
+                views_str = f"{views / 1000:.0f}K"
+            else:
+                views_str = f"{int(views)}"
+            
             topic_performance.append({
                 "topic_series": topic,
-                "avg_views": f"{views / 1000:.1f}K" if views < 1000000 else f"{views / 1000000:.1f}M",
+                "avg_views": views_str,
                 "cpm_estimate": f"${rpm:.2f}",
                 "performance_rating": "Excellent" if i < 2 else "Strong" if i < 4 else "Good",
                 "revenue_contribution": "High" if i < 3 else "Medium"
