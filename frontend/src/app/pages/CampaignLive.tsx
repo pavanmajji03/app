@@ -81,7 +81,7 @@ export function CampaignLive() {
   };
 
   useEffect(() => {
-    // Try real report first, fall back to mock creator for display fields
+    // Try real report first, fall back to fetching from backend
     const stored = getStoredReport(user?.email);
     if (stored) {
       setCreator(prev => ({
@@ -91,9 +91,9 @@ export function CampaignLive() {
         image: stored.thumbnailUrl ?? (prev?.image ?? ''),
         aiScore: stored.aiScore,
       } as Creator));
-    } else {
-      callApi<Creator[]>('getCreator_CampaignLive').then(res => setCreator(res.data[0]));
     }
+    // Note: removed fallback to mock data - if no stored report, creator will remain null
+    // which is correct behavior (user needs to complete analysis first)
 
     // Resolve campaign_id: sessionStorage first, then localStorage (returning creator)
     const campaignId =
