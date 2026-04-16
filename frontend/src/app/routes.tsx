@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 import { RootLayout } from './layouts/RootLayout';
-import { FanGuard, CreatorGuard, RootRedirect } from './components/RoleGuard';
+import { FanGuard, CreatorGuard, BrandGuard, RootRedirect } from './components/RoleGuard';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Marketplace } from './pages/Marketplace';
@@ -20,6 +20,10 @@ import { PitchVideo } from './pages/PitchVideo';
 import { PitchV2 } from './pages/PitchV2';
 import { PitchV3 } from './pages/PitchV3';
 import { PitchV4 } from './pages/PitchV4';
+import { BrandLanding } from './pages/BrandLanding';
+import { CreatorSearch } from './pages/CreatorSearch';
+import { CreatorComparison } from './pages/CreatorComparison';
+import { BrandCreatorReport } from './pages/BrandCreatorReport';
 
 function NotFound() {
   return (
@@ -47,6 +51,10 @@ export const router = createBrowserRouter([
       { path: 'creator', Component: CreatorPage },
       { path: 'portfolio', Component: Portfolio },
       { path: 'watchlist', element: <FanGuard><Watchlist /></FanGuard> },
+      { path: 'brand-landing', element: <BrandGuard><BrandLanding /></BrandGuard> },
+      { path: 'creator-search', element: <BrandGuard><CreatorSearch /></BrandGuard> },
+      { path: 'creator-comparison', element: <BrandGuard><CreatorComparison /></BrandGuard> },
+      { path: 'brand-report', element: <BrandGuard><BrandCreatorReport /></BrandGuard> },
       { path: 'statement', Component: Statement },
       { path: 'onboard', element: <CreatorGuard><CreatorOnboarding /></CreatorGuard> },
       { path: 'analysis', Component: CreatorAnalysis },

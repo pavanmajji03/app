@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-export type UserRole = 'creator' | 'fan';
+export type UserRole = 'creator' | 'fan' | 'brand';
 
 export interface AuthUser {
   name: string;

@@ -171,6 +171,7 @@ function FeaturePill({ icon: Icon, label }: { icon: any; label: string }) {
 const roles: { value: UserRole; label: string; desc: string; emoji: string }[] = [
   { value: 'creator', label: 'Creator', desc: 'List & fund your content', emoji: '🎬' },
   { value: 'fan',     label: 'Fan',     desc: 'Invest in creators you love', emoji: '⭐' },
+  { value: 'brand',   label: 'Brand Owner', desc: 'Find creators for partnerships', emoji: '🏢' },
 ];
 
 function RoleDropdown({
@@ -348,7 +349,7 @@ function ProfileSetup({ user, onComplete }: { user: AuthUser; onComplete: () => 
         <div className="mb-6">
           <label className="flex items-center gap-1.5 text-xs font-semibold mb-2" style={{ color: palette.textMuted }}>
             <Tag size={12} />
-            {user.role === 'creator' ? 'Your channel genres' : 'Genres you love'} (pick any)
+            {user.role === 'creator' ? 'Your channel genres' : user.role === 'brand' ? 'Your brand categories' : 'Genres you love'} (pick any)
           </label>
           <div className="flex flex-wrap gap-2">
             {allGenres.map(g => {
@@ -413,8 +414,12 @@ export function Login() {
     if (redirect) {
       sessionStorage.removeItem('fanfolio_post_login_redirect');
       navigate(redirect, { replace: true });
+    } else if (u.role === 'creator') {
+      navigate('/onboard', { replace: true });
+    } else if (u.role === 'brand') {
+      navigate('/brand-landing', { replace: true });
     } else {
-      navigate(u.role === 'creator' ? '/onboard' : '/fanlanding', { replace: true });
+      navigate('/fanlanding', { replace: true });
     }
   };
 
@@ -638,6 +643,8 @@ export function Login() {
           <p className="text-xs text-center mt-5" style={{ color: palette.textSubtle }}>
             {role === 'creator'
               ? "Signing in as Creator will take you to the onboarding flow."
+              : role === 'brand'
+              ? "Signing in as Brand Owner will take you to the creator discovery hub."
               : "Signing in as Fan will take you to the marketplace."}
           </p>
 

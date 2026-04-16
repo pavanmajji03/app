@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { useTheme, palettes } from '../context/ThemeContext';
 import type { PaletteKey } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { TrendingUp, BarChart2, LogOut, Palette, ChevronDown, Bookmark } from 'lucide-react';
+import { TrendingUp, BarChart2, LogOut, Palette, ChevronDown, Bookmark, Search, GitCompare, Home } from 'lucide-react';
 
 const paletteKeys: PaletteKey[] = ['midnight', 'ocean', 'forest', 'luxe'];
 const paletteColors: Record<PaletteKey, string> = {
@@ -118,10 +118,15 @@ export function Navbar() {
   const isActive = (path: string) => location.pathname === path;
 
   const navLinks = [
-    { label: 'Marketplace', path: '/marketplace' },
+    ...(user?.role === 'brand' ? [
+      { label: 'Brand Home', path: '/brand-landing' },
+      { label: 'Find Creators', path: '/creator-search' },
+    ] : [
+      { label: 'Marketplace', path: '/marketplace' },
+    ]),
     ...(user?.role === 'creator' ? [
-      { label: 'My Dashboard', path: '/report' }, // Changed from "My Channel" and points to report
-      { label: 'New Analysis', path: '/onboard' }  // Changed from "List Your Channel"
+      { label: 'My Dashboard', path: '/report' },
+      { label: 'New Analysis', path: '/onboard' },
     ] : []),
     { label: 'About Us', path: '/about' },
   ];
@@ -189,6 +194,20 @@ export function Navbar() {
               Portfolio
             </button>
           </>
+        )}
+
+        {user?.role === 'brand' && (
+          <button
+            onClick={() => navigate('/creator-comparison')}
+            className="hidden md:flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors"
+            style={{
+              color: isActive('/creator-comparison') ? palette.primary : palette.textMuted,
+              backgroundColor: isActive('/creator-comparison') ? `${palette.primary}18` : 'transparent',
+            }}
+          >
+            <GitCompare size={14} />
+            Compare
+          </button>
         )}
 
         {user ? (

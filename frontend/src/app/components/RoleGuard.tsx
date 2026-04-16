@@ -34,6 +34,9 @@ export function RootRedirect() {
   if (user?.role === 'creator') {
     return <Navigate to={creatorDest(user.email)} replace />;
   }
+  if (user?.role === 'brand') {
+    return <Navigate to="/brand-landing" replace />;
+  }
   return <Navigate to="/fanlanding" replace />;
 }
 
@@ -54,6 +57,20 @@ export function FanGuard({ children }: { children: React.ReactNode }) {
   // Block creators only when they have a definitive home (report / campaign)
   // If analysis is in progress, let them through so they can explore the marketplace
   if (user?.role === 'creator' && creatorDest(user.email) !== '/analysis') return null;
+  return <>{children}</>;
+}
+
+export function BrandGuard({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user && user.role !== 'brand') {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (user?.role !== 'brand') return null;
   return <>{children}</>;
 }
 
