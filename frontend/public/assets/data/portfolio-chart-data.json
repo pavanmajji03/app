@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "message": "Portfolio chart data fetched successfully",
+  "data": [
+    { "month": "Jan", "portfolio": 750, "earned": 0 },
+    { "month": "Feb", "portfolio": 762, "earned": 6.22 },
+    { "month": "Mar", "portfolio": 769, "earned": 3.96 },
+    { "month": "Apr", "portfolio": 769, "earned": 0 },
+    { "month": "May", "portfolio": 769, "earned": 0 },
+    { "month": "Jun", "portfolio": 769, "earned": 0 }
+  ]
+}

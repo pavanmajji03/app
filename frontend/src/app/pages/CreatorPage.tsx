@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { creators } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import { getStoredReport } from '../utils/reportUtils';
+import type { Creator, InvestorActivity } from '../data/mockData';
 import {
-  TrendingUp, Users, Eye, Clock, Shield, Star, Youtube, Instagram, Twitter,
-  PlayCircle, Calendar, ChevronRight, Info
+  TrendingUp, Shield, Star,
+  PlayCircle, ChevronRight,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-
-const creator = creators[0]; // TechVault
 
 function RiskBar({ label, value, inverse = false }: { label: string; value: number; inverse?: boolean }) {
   const { palette } = useTheme();
@@ -32,13 +33,47 @@ function RiskBar({ label, value, inverse = false }: { label: string; value: numb
   );
 }
 
-function PayoutCalculator() {
+interface RealCampaign {
+  campaign_id: string;
+  term_months: number;
+  revenue_share_pct: number;
+  target_amount: number;
+  raised_amount: number;
+  investor_count: number;
+  return_low: number;
+  return_base: number;
+  return_high: number;
+}
+
+function PayoutCalculator({ creator, campaign }: { creator: Creator; campaign: RealCampaign | null }) {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [amount, setAmount] = useState(100);
+  const [investing, setInvesting] = useState(false);
+  const [invested, setInvested] = useState(false);
+  const [investError, setInvestError] = useState<string | null>(null);
 
-  const calcReturn = (pct: number) => ((amount * pct) / 100).toFixed(0);
-  const calcTotal = (pct: number) => (amount + Number(calcReturn(pct))).toFixed(0);
+  // Merge: real campaign fields override mock creator fields
+  const term = campaign?.term_months ?? creator.term;
+  const revenueShare = campaign?.revenue_share_pct ?? creator.revenueShare;
+  const targetAmount = campaign?.target_amount ?? creator.targetAmount;
+  const raisedAmount = campaign?.raised_amount ?? creator.raisedAmount;
+  const returnLow = campaign?.return_low ?? creator.returnLow;
+  const returnBase = campaign?.return_base ?? creator.returnBase;
+  const returnHigh = campaign?.return_high ?? creator.returnHigh;
+
+  const remaining = Math.max(10, targetAmount - raisedAmount);
+  const sliderMax = Math.ceil(remaining / 10) * 10; // round up to nearest $10
+
+  const fmtReturn = (pct: number) => {
+    const val = Math.round((amount * pct) / 100);
+    return val >= 0 ? `+$${val.toLocaleString()}` : `-$${Math.abs(val).toLocaleString()}`;
+  };
+  const fmtTotal = (pct: number) => {
+    const val = amount + Math.round((amount * pct) / 100);
+    return `$${Math.max(0, val).toLocaleString()}`;
+  };
 
   return (
     <div
@@ -53,9 +88,9 @@ function PayoutCalculator() {
         >
           CAMPAIGN LIVE
         </div>
-        <h3 className="font-bold" style={{ color: palette.text }}>TechVault · Season 1</h3>
+        <h3 className="font-bold" style={{ color: palette.text }}>{creator.name} · Season 1</h3>
         <p className="text-xs mt-0.5" style={{ color: palette.textMuted }}>
-          {creator.term} months · {creator.revenueShare}% revenue share
+          {term} months · {revenueShare}% revenue share
         </p>
       </div>
 
@@ -63,34 +98,34 @@ function PayoutCalculator() {
       <div className="mb-5 p-3 rounded-xl" style={{ backgroundColor: palette.surfaceAlt }}>
         <div className="flex justify-between text-xs mb-2">
           <span style={{ color: palette.textMuted }}>Raised</span>
-          <span style={{ color: palette.text }}>{Math.round((creator.raisedAmount / creator.targetAmount) * 100)}%</span>
+          <span style={{ color: palette.text }}>{Math.round((raisedAmount / targetAmount) * 100)}%</span>
         </div>
         <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: palette.bg }}>
           <div
             className="h-full rounded-full"
             style={{
-              width: `${Math.round((creator.raisedAmount / creator.targetAmount) * 100)}%`,
+              width: `${Math.round((raisedAmount / targetAmount) * 100)}%`,
               background: palette.gradient,
             }}
           />
         </div>
         <div className="flex justify-between mt-2 text-xs">
-          <span style={{ color: palette.text }}>${creator.raisedAmount.toLocaleString()}</span>
-          <span style={{ color: palette.textSubtle }}>of ${creator.targetAmount.toLocaleString()}</span>
+          <span style={{ color: palette.text }}>${raisedAmount.toLocaleString()}</span>
+          <span style={{ color: palette.textSubtle }}>of ${targetAmount.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Calculator */}
       <div className="mb-4">
         <label className="text-xs font-semibold mb-2 block" style={{ color: palette.textMuted }}>
-          Simulate your investment
+          Simulate your backing
         </label>
         <div className="relative mb-2">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold" style={{ color: palette.textMuted }}>$</span>
           <input
             type="number"
             value={amount}
-            onChange={e => setAmount(Math.max(1, Number(e.target.value)))}
+            onChange={e => setAmount(Math.min(sliderMax, Math.max(1, Number(e.target.value))))}
             className="w-full pl-7 pr-3 py-2.5 rounded-xl text-sm font-bold outline-none"
             style={{ backgroundColor: palette.surfaceAlt, color: palette.text, border: `1px solid ${palette.border}` }}
           />
@@ -98,21 +133,24 @@ function PayoutCalculator() {
         <input
           type="range"
           min={10}
-          max={5000}
+          max={sliderMax}
           step={10}
-          value={amount}
+          value={Math.min(amount, sliderMax)}
           onChange={e => setAmount(Number(e.target.value))}
           className="w-full mb-3"
           style={{ accentColor: palette.primary }}
         />
+        <p className="text-xs text-right -mt-2 mb-1" style={{ color: palette.textSubtle }}>
+          Max: ${sliderMax.toLocaleString()} remaining
+        </p>
       </div>
 
       {/* Payout scenarios */}
       <div className="mb-4 rounded-xl overflow-hidden" style={{ border: `1px solid ${palette.border}` }}>
         {[
-          { label: 'Low', pct: creator.returnLow, color: palette.warning },
-          { label: 'Base', pct: creator.returnBase, color: palette.success },
-          { label: 'High', pct: creator.returnHigh, color: palette.primaryLight },
+          { label: 'Low', pct: returnLow, color: palette.warning },
+          { label: 'Base', pct: returnBase, color: palette.success },
+          { label: 'High', pct: returnHigh, color: palette.primaryLight },
         ].map((s, i) => (
           <div
             key={s.label}
@@ -124,22 +162,51 @@ function PayoutCalculator() {
           >
             <div>
               <p className="text-xs font-semibold" style={{ color: s.color }}>{s.label} Scenario</p>
-              <p className="text-xs" style={{ color: palette.textSubtle }}>+{s.pct}% return</p>
+              <p className="text-xs" style={{ color: palette.textSubtle }}>{s.pct >= 0 ? '+' : ''}{s.pct}% return</p>
             </div>
             <div className="text-right">
-              <p className="font-bold text-sm" style={{ color: palette.text }}>+${calcReturn(s.pct)}</p>
-              <p className="text-xs" style={{ color: palette.textSubtle }}>${calcTotal(s.pct)} total</p>
+              <p className="font-bold text-sm" style={{ color: s.pct >= 0 ? palette.text : palette.danger }}>{fmtReturn(s.pct)}</p>
+              <p className="text-xs" style={{ color: palette.textSubtle }}>{fmtTotal(s.pct)} total</p>
             </div>
           </div>
         ))}
       </div>
 
+      {investError && (
+        <p className="text-xs text-center mb-2" style={{ color: palette.danger ?? '#ef4444' }}>{investError}</p>
+      )}
       <button
-        onClick={() => navigate('/portfolio')}
+        onClick={async () => {
+          if (!campaign) { navigate('/portfolio'); return; }
+          if (!user?.email) { navigate('/login'); return; }
+          if (invested) { navigate('/portfolio'); return; }
+          setInvesting(true);
+          setInvestError(null);
+          try {
+            await callApi(
+              'investInCampaign_CreatorPage',
+              {
+                pathParams: { campaign_id: campaign.campaign_id },
+                payload: { fan_email: user.email, fan_name: user.name ?? user.email, amount },
+              }
+            );
+            setInvested(true);
+            setTimeout(() => navigate('/portfolio'), 800);
+          } catch {
+            setInvestError('Backing failed. Please try again.');
+            setInvesting(false);
+          }
+        }}
+        disabled={investing}
         className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2"
-        style={{ background: palette.gradient, color: palette.onPrimary }}
+        style={{ background: palette.gradient, color: palette.onPrimary, opacity: investing ? 0.7 : 1 }}
       >
-        Paper Invest ${amount.toLocaleString()} <ChevronRight size={16} />
+        {invested
+          ? <>Backed! Redirecting... <ChevronRight size={16} /></>
+          : investing
+          ? <>Processing...</>
+          : <>Back This Creator · ${amount.toLocaleString()} <ChevronRight size={16} /></>
+        }
       </button>
 
       <p className="text-center text-xs mt-3" style={{ color: palette.textSubtle }}>
@@ -151,7 +218,85 @@ function PayoutCalculator() {
 
 export function CreatorPage() {
   const { palette } = useTheme();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'report' | 'investors'>('overview');
+  const [creator, setCreator] = useState<Creator | null>(null);
+  const [investors, setInvestors] = useState<InvestorActivity[]>([]);
+  const [campaign, setCampaign] = useState<RealCampaign | null>(null);
+  const stored = getStoredReport(user?.email);
+
+  // If analysis is still running (analysis_id exists but no completed report), send them back
+  useEffect(() => {
+    const analysisInProgress = sessionStorage.getItem('fanfolio_analysis_id') &&
+      !localStorage.getItem(`fanfolio_creator_report_${user?.email}`);
+    if (analysisInProgress && !stored) {
+      navigate('/analysis', { replace: true });
+    }
+  }, [user, stored, navigate]);
+
+  useEffect(() => {
+    if (!stored) return; // don't load mock data while analysis is running
+    // Merge real report data over mock creator fields
+    callApi<Creator[]>('getCreator_CreatorPage').then(res => {
+      const mock = res.data[0];
+      if (!stored) { setCreator(mock); return; }
+
+      setCreator({
+        ...mock,
+        name: stored.channelName,
+        handle: stored.handle,
+        image: stored.thumbnailUrl ?? mock.image,
+        aiScore: stored.aiScore,
+        subscribers: stored.subscribers,
+        avgViews: stored.avgViews,
+        growthRate: stored.growthRate,
+        totalViews: stored.totalViews || mock.totalViews,
+        engagementRate: stored.engagementRate || mock.engagementRate,
+        uploadFreq: stored.uploadFreq || mock.uploadFreq,
+        category: stored.niche || mock.category,
+        location: stored.location || mock.location,
+        description: stored.description || mock.description,
+        tags: stored.tags.length > 0 ? stored.tags : mock.tags,
+        platforms: stored.platforms.length > 0 ? stored.platforms : mock.platforms,
+        recentVideos: stored.recentVideos.length > 0 ? stored.recentVideos : mock.recentVideos,
+        riskFactors: {
+          growthTrend: stored.riskFactors.growthTrend,
+          cadenceReliability: stored.riskFactors.cadenceReliability,
+          platformDiversification: stored.riskFactors.platformDiversification,
+          volatility: stored.riskFactors.volatility,
+          concentrationRisk: stored.riskFactors.concentrationRisk,
+        },
+        forecastData: {
+          views30: { low: stored.forecastLowM.d30, base: stored.forecastBaseM.d30, high: stored.forecastHighM.d30 },
+          views90: { low: stored.forecastLowM.d90, base: stored.forecastBaseM.d90, high: stored.forecastHighM.d90 },
+          views180: { low: stored.forecastLowM.d180, base: stored.forecastBaseM.d180, high: stored.forecastHighM.d180 },
+        },
+      });
+    });
+
+    // Load real campaign by analysis_id if available
+    const analysisId = sessionStorage.getItem('fanfolio_analysis_id');
+    if (analysisId) {
+      callApi<RealCampaign>('getCampaignByAnalysis_CreatorPage', { pathParams: { analysis_id: analysisId } })
+        .then(res => {
+          setCampaign(res.data);
+          // Load real investors for this campaign
+          callApi<InvestorActivity[]>(
+            'getCampaignInvestments_CreatorPage',
+            { pathParams: { campaign_id: res.data.campaign_id } }
+          ).then(inv => setInvestors(inv.data)).catch(() => {});
+        })
+        .catch(() => {
+          // Fall back to mock investors
+          callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(res => setInvestors(res.data));
+        });
+    } else {
+      callApi<InvestorActivity[]>('getInvestorActivity_CreatorPage').then(res => setInvestors(res.data));
+    }
+  }, []);
+
+  if (!creator) return null;
 
   const forecastChartData = [
     { period: '30 Days', Low: creator.forecastData.views30.low, Base: creator.forecastData.views30.base, High: creator.forecastData.views30.high },
@@ -160,11 +305,11 @@ export function CreatorPage() {
   ];
 
   const platformIcons: Record<string, any> = {
-    YouTube: Youtube,
-    Instagram: Instagram,
-    X: Twitter,
+    YouTube: PlayCircle,
+    Instagram: Star,
+    X: TrendingUp,
     TikTok: TrendingUp,
-    Newsletter: Star,
+    Newsletter: ChevronRight,
   };
 
   return (
@@ -174,7 +319,7 @@ export function CreatorPage() {
         className="relative h-56 overflow-hidden"
         style={{ borderBottom: `1px solid ${palette.border}` }}
       >
-        <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
+        <img src={creator.image} alt={creator.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
         <div
           className="absolute inset-0"
           style={{ background: `linear-gradient(to bottom, transparent 0%, ${palette.bg} 100%)` }}
@@ -188,7 +333,7 @@ export function CreatorPage() {
             className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0"
             style={{ border: `3px solid ${palette.primary}` }}
           >
-            <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
+            <img src={creator.image} alt={creator.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -291,11 +436,11 @@ export function CreatorPage() {
                         className="flex items-center gap-3 p-3 rounded-xl"
                         style={{ backgroundColor: palette.surfaceAlt }}
                       >
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${palette.primary}22` }}
-                        >
-                          <PlayCircle size={18} style={{ color: palette.primary }} />
+                        <div className="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: `${palette.primary}22` }}>
+                          {v.thumbnail
+                            ? <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center"><PlayCircle size={18} style={{ color: palette.primary }} /></div>
+                          }
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate" style={{ color: palette.text }}>{v.title}</p>
@@ -313,6 +458,18 @@ export function CreatorPage() {
 
             {activeTab === 'report' && (
               <>
+                {/* Link to full report */}
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-xs" style={{ color: palette.textMuted }}>Summary view — see full analysis below</p>
+                  <button
+                    onClick={() => navigate('/report')}
+                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                    style={{ backgroundColor: `${palette.primary}15`, color: palette.primary, border: `1px solid ${palette.primary}30` }}
+                  >
+                    <ChevronRight size={12} /> View Full AI Report
+                  </button>
+                </div>
+
                 {/* View Forecast Chart */}
                 <div className="mb-6 p-5 rounded-2xl" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
                   <h3 className="font-bold mb-1" style={{ color: palette.text }}>View Forecast (Millions)</h3>
@@ -344,30 +501,29 @@ export function CreatorPage() {
                   <RiskBar label="Volatility (lower = better)" value={creator.riskFactors.volatility} inverse />
                   <RiskBar label="Concentration Risk (lower = better)" value={creator.riskFactors.concentrationRisk} inverse />
 
-                  <div
-                    className="mt-4 p-3 rounded-xl flex items-start gap-2"
-                    style={{ backgroundColor: `${palette.success}12`, border: `1px solid ${palette.success}30` }}
-                  >
-                    <Shield size={14} style={{ color: palette.success, marginTop: 1 }} className="flex-shrink-0" />
-                    <p className="text-xs leading-relaxed" style={{ color: palette.success }}>
-                      <strong>AI Assessment:</strong> TechVault demonstrates strong consistency and low volatility. High cadence reliability and growing subscriber base signal durable performance.
-                    </p>
-                  </div>
+                  {stored && (stored.strengths.length > 0 || stored.aiAssessmentNarrative) && (
+                    <div
+                      className="mt-4 p-3 rounded-xl flex items-start gap-2"
+                      style={{ backgroundColor: `${palette.success}12`, border: `1px solid ${palette.success}30` }}
+                    >
+                      <Shield size={14} style={{ color: palette.success, marginTop: 1 }} className="flex-shrink-0" />
+                      <div className="text-xs leading-relaxed" style={{ color: palette.success }}>
+                        {stored.aiAssessmentNarrative
+                          ? <p><strong>AI Assessment:</strong> {stored.aiAssessmentNarrative}</p>
+                          : stored.strengths.map((s, i) => <p key={i}>✓ {s}</p>)
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
 
             {activeTab === 'investors' && (
               <div className="p-5 rounded-2xl" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
-                <h3 className="font-bold mb-4" style={{ color: palette.text }}>Investor Activity</h3>
+                <h3 className="font-bold mb-4" style={{ color: palette.text }}>Backer Activity</h3>
                 <div className="flex flex-col gap-3">
-                  {[
-                    { name: 'Alex R.', amount: 500, days: 2 },
-                    { name: 'Jordan M.', amount: 1000, days: 4 },
-                    { name: 'Casey T.', amount: 250, days: 6 },
-                    { name: 'Sam K.', amount: 750, days: 9 },
-                    { name: 'Riley P.', amount: 200, days: 12 },
-                  ].map((inv, i) => (
+                  {investors.map((inv, i) => (
                     <div
                       key={i}
                       className="flex items-center justify-between p-3 rounded-xl"
@@ -392,7 +548,7 @@ export function CreatorPage() {
                   ))}
                 </div>
                 <p className="text-center text-xs mt-4" style={{ color: palette.textSubtle }}>
-                  {creator.investorCount} total investors · {Math.round((creator.raisedAmount / creator.targetAmount) * 100)}% funded
+                  {campaign?.investor_count ?? creator.investorCount} total {(campaign?.investor_count ?? creator.investorCount) === 1 ? 'backer' : 'backers'} · {Math.round(((campaign?.raised_amount ?? creator.raisedAmount) / (campaign?.target_amount ?? creator.targetAmount)) * 100)}% funded
                 </p>
               </div>
             )}
@@ -400,7 +556,7 @@ export function CreatorPage() {
 
           {/* Right: Sidebar */}
           <div>
-            <PayoutCalculator />
+            <PayoutCalculator creator={creator} campaign={campaign} />
           </div>
         </div>
       </div>

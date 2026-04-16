@@ -1,0 +1,66 @@
+{
+  "status": "success",
+  "message": "Creator report signals fetched successfully",
+  "data": {
+    "signalGroups": [
+      {
+        "icon": "Youtube",
+        "label": "YouTube Signals",
+        "items": ["8.2M subscribers", "2.1B total views", "30 recent videos", "+18% growth rate", "2x weekly cadence"]
+      },
+      {
+        "icon": "Globe",
+        "label": "Social Signals",
+        "items": ["Instagram: 1.2M followers", "X: 340K followers", "8.9% avg engagement", "Cross-platform momentum", "No controversy flags"]
+      },
+      {
+        "icon": "TrendingUp",
+        "label": "Trend Signals",
+        "items": ["Tech topics trending up", "Recent collab announcement", "No viral dependency", "Consistent top results", "Strong SEO footprint"]
+      }
+    ],
+    "revenueScenarios": [
+      {
+        "key": "low",
+        "label": "Low (Conservative)",
+        "description": "Assumes -30% below trend. Slowed uploads, algorithm shift, or topic fatigue.",
+        "views": "210M",
+        "revenue": "$882K",
+        "fanReturn": "~9%",
+        "color": "danger"
+      },
+      {
+        "key": "base",
+        "label": "Base (Expected)",
+        "description": "Trend-line forecast. Current cadence and engagement maintained.",
+        "views": "320M",
+        "revenue": "$1.34M",
+        "fanReturn": "~16%",
+        "color": "primary"
+      },
+      {
+        "key": "high",
+        "label": "High (Optimistic)",
+        "description": "Viral breakout or new product launch collab. +50% above trend.",
+        "views": "480M",
+        "revenue": "$2.02M",
+        "fanReturn": "~28%",
+        "color": "success"
+      }
+    ],
+    "assessment": {
+      "strengths": [
+        "Exceptional upload consistency (90th percentile among tech creators)",
+        "High subscriber-to-view conversion indicates loyal, returning audience",
+        "Multi-platform presence reduces single-platform risk",
+        "Niche (tech reviews) has strong, stable advertiser demand (high RPM)"
+      ],
+      "watchFactors": [
+        "Revenue concentration: 78% from YouTube AdSense (brand deals not modeled)",
+        "Topic cycle risk: major product launch timing affects view spikes",
+        "Platform policy: YouTube algorithm changes could impact discovery"
+      ],
+      "confidenceScore": "84%"
+    }
+  }
+}

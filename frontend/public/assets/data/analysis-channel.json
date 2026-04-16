@@ -1,0 +1,122 @@
+{
+  "status": "success",
+  "message": "Channel analysis fetched successfully",
+  "data": {
+    "ai_underwriting_report": {
+      "channel_name": "Varun Mayya",
+      "handle": "@VarunMayya",
+      "niche": "AI • Tech • Entrepreneurship • Founder Mindset (Kata series)",
+      "location": "Bengaluru, Karnataka, India",
+      "subscribers": "1.08M",
+      "avg_views": "~325K",
+      "growth_rate": "+12%",
+      "ai_score": 88,
+      "ai_score_label": "Strong",
+      "total_views": "407.4M",
+      "total_videos": "1,250+",
+      "recent_performance": "9.78M views in last 30 days"
+    },
+    "youtube_signals": {
+      "subscribers": "1.08M",
+      "total_views": "407.4M",
+      "recent_videos": "32+ (last 90 days)",
+      "growth_rate": "+12% (30-day)",
+      "cadence": "Consistent 1–2 long-form videos/week + AI-assisted shorts",
+      "notes": "Heavy scaling via AI tools; runs 70+ supporting channels (1B+ monthly views across network)"
+    },
+    "social_signals": {
+      "instagram": {
+        "username": "thevarunmayya",
+        "followers": "1.26M",
+        "engagement_rate": "~0.6%"
+      },
+      "twitter_x": {
+        "handle": "@waitin4agi_ (primary AI-focused account)",
+        "followers": "246K",
+        "bio": "waiting for agi. i live to experiment. content, games, and tools."
+      },
+      "linkedin": {
+        "url": "https://www.linkedin.com/in/varunmayya",
+        "followers": "78K"
+      },
+      "cross_platform_momentum": "Excellent – multi-platform presence reduces single-platform risk",
+      "no_controversy_flags": true
+    },
+    "trending_topics_analysis": {
+      "analyzed": true,
+      "top_trending_topics": [
+        "Agentic AI & AI Agents (practical usage and future impact)",
+        "Kata series – Indian startup profitability, scaling, harsh truths",
+        "AI tools for content creators & media empire building",
+        "Future of work/skills for Indian engineers in 2026 AI era",
+        "Founder mindset, social pressure, depression & entrepreneurship realities"
+      ],
+      "momentum": "High – Kata series + AI content consistently driving 100K–240K views per video with strong watch time"
+    },
+    "view_forecast_millions_180_days": {
+      "low_conservative": {
+        "30d": 8,
+        "90d": 22,
+        "180d": 45,
+        "notes": "Assumes -20% below trend (algorithm shift or AI fatigue)"
+      },
+      "base_expected": {
+        "30d": 10,
+        "90d": 28,
+        "180d": 60,
+        "notes": "Trend-line forecast. Current cadence maintained."
+      },
+      "high_optimistic": {
+        "30d": 14,
+        "90d": 38,
+        "180d": 90,
+        "notes": "Viral Kata episode or major AI collab breakout (+50% above trend)"
+      }
+    },
+    "revenue_scenarios_180_days_youtube_only": {
+      "low_conservative": {
+        "views": "45M",
+        "estimated_adSense": "$15,000",
+        "notes": "Pure YouTube AdSense only"
+      },
+      "base_expected": {
+        "views": "60M",
+        "estimated_adSense": "$20,200",
+        "notes": "Pure YouTube AdSense only"
+      },
+      "high_optimistic": {
+        "views": "90M",
+        "estimated_adSense": "$30,300",
+        "notes": "Pure YouTube AdSense only"
+      }
+    },
+    "campaign_readiness": {
+      "overall_score": "88/100",
+      "qualifies_for_campaign": true,
+      "message": "Your AI score of 88/100 qualifies you for a campaign. Set your terms and go live."
+    },
+    "risk_factor_analysis": {
+      "growth_trend": 87,
+      "cadence_reliability": 92,
+      "platform_diversification": 83,
+      "low_volatility_higher_is_better": 77,
+      "low_concentration_risk_higher_is_better": 69
+    },
+    "ai_assessment_summary": {
+      "strengths": [
+        "Exceptional upload consistency powered by AI systems (top 10th percentile among tech/AI creators)",
+        "High subscriber-to-view conversion + strong watch time on long-form \"Kata\" series indicates loyal, returning audience",
+        "Multi-platform presence (YouTube 1.08M + Instagram 1.26M + X 246K) significantly reduces single-platform risk",
+        "Niche (AI + Indian entrepreneurship / \"Kata\" founder mindset) has strong, stable advertiser demand (high RPM)"
+      ],
+      "watch_factors": [
+        "Revenue concentration: 100% of modeled revenue from YouTube AdSense only ($3,370/month current estimate — brand deals & Aeos Labs not included)",
+        "Topic cycle risk: Performance tied to AI hype cycles and \"Kata\" series momentum — view spikes can cool if Indian startup sentiment shifts",
+        "Platform & production risk: Heavy reliance on AI-assisted content creation and YouTube algorithm changes could impact discovery"
+      ],
+      "youtube_only_adSense_monthly": "$3,370",
+      "confidence_score": 87,
+      "confidence_based_on": "2,900+ data points (March 28 2026)"
+    }
+  }
+}

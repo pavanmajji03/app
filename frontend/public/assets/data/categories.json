@@ -1,0 +1,5 @@
+{
+  "status": "success",
+  "message": "Categories fetched successfully",
+  "data": ["All", "Tech Reviews", "Lifestyle", "Science & Education", "Food & Cooking", "Fitness & Health", "Finance"]
+}

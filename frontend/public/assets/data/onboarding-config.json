@@ -1,0 +1,28 @@
+{
+  "status": "success",
+  "message": "Onboarding config fetched successfully",
+  "data": {
+    "steps": ["Channel", "Social Links", "Upcoming Video", "Review"],
+    "defaultForm": {
+      "youtubeUrl": "",
+      "instagram": "",
+      "tiktok": "",
+      "twitter": "",
+      "linkedin": "",
+      "videoTitle": "",
+      "videoDesc": "",
+      "videoDate": "",
+      "videoFormat": ""
+    },
+    "analysisChecklist": [
+      "Subscriber count & growth",
+      "Last 30 videos performance",
+      "View velocity & trend",
+      "Engagement rate",
+      "Upload consistency",
+      "Concentration risk",
+      "Topic trending signals",
+      "Cross-platform mentions"
+    ]
+  }
+}

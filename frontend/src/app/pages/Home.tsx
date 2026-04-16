@@ -1,7 +1,28 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { creators } from '../data/mockData';
-import { TrendingUp, Shield, Zap, ArrowRight, Users, BarChart2, DollarSign, ChevronRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import { TrendingUp, Shield, Zap, ArrowRight, BarChart2, DollarSign, ChevronRight, Star } from 'lucide-react';
+
+interface LiveCampaign {
+  campaign_id: string;
+  creator_name: string;
+  creator_handle: string;
+  creator_thumbnail: string;
+  ai_score: number;
+  risk_level: string;
+  genres: string[];
+  subscribers: string;
+  avg_views: string;
+  growth_rate: string;
+  target_amount: number;
+  raised_amount: number;
+  investor_count: number;
+  return_base: number;
+  return_low: number;
+  return_high: number;
+}
 
 function StatCard({ value, label, color }: { value: string; label: string; color: string }) {
   const { palette } = useTheme();
@@ -38,63 +59,47 @@ function StepCard({ num, title, desc, icon: Icon }: { num: string; title: string
   );
 }
 
-function MiniCreatorCard({ creator }: { creator: typeof creators[0] }) {
+function MiniCampaignCard({ c }: { c: LiveCampaign }) {
   const { palette } = useTheme();
   const navigate = useNavigate();
-
-  const riskColors: Record<string, string> = {
-    Low: palette.success,
-    'Low-Med': '#84CC16',
-    Medium: palette.warning,
-    High: palette.danger,
-  };
-
-  const pct = Math.round((creator.raisedAmount / creator.targetAmount) * 100);
+  const riskColors: Record<string, string> = { Low: palette.success, 'Low-Med': '#84CC16', Medium: palette.warning, High: palette.danger };
+  const pct = c.target_amount > 0 ? Math.min(100, Math.round((c.raised_amount / c.target_amount) * 100)) : 0;
+  const scoreColor = c.ai_score >= 80 ? palette.success : c.ai_score >= 70 ? palette.warning : '#F97316';
 
   return (
     <div
       className="rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-1"
       style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-      onClick={() => navigate('/creator')}
+      onClick={() => navigate(`/campaign/${c.campaign_id}`)}
     >
-      <div className="relative h-36 overflow-hidden">
-        <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(to top, ${palette.surface} 0%, transparent 60%)` }}
-        />
-        <div
-          className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
-          style={{ backgroundColor: `${riskColors[creator.riskLevel]}22`, color: riskColors[creator.riskLevel] }}
-        >
-          {creator.riskLevel} Risk
+      <div className="relative h-36 overflow-hidden" style={{ backgroundColor: `${palette.primary}22` }}>
+        {c.creator_thumbnail
+          ? <img src={c.creator_thumbnail} alt={c.creator_name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+          : <div className="w-full h-full flex items-center justify-center text-4xl font-black opacity-20" style={{ color: palette.primary }}>{c.creator_name?.[0]}</div>
+        }
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${palette.surface} 0%, transparent 60%)` }} />
+        <div className="absolute top-3 left-3 flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${scoreColor}22`, color: scoreColor }}>
+          <Star size={9} fill={scoreColor} strokeWidth={0} /> {c.ai_score}
+        </div>
+        <div className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${riskColors[c.risk_level] ?? palette.warning}22`, color: riskColors[c.risk_level] ?? palette.warning }}>
+          {c.risk_level} Risk
         </div>
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="font-semibold text-sm" style={{ color: palette.text }}>{creator.name}</h4>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: `${palette.primary}18`, color: palette.primary }}
-          >
-            {creator.category}
-          </span>
+          <h4 className="font-semibold text-sm truncate" style={{ color: palette.text }}>{c.creator_name}</h4>
+          {c.genres[0] && (
+            <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0 ml-2" style={{ backgroundColor: `${palette.primary}18`, color: palette.primary }}>{c.genres[0]}</span>
+          )}
         </div>
-        <p className="text-xs mb-3" style={{ color: palette.textMuted }}>{creator.subscribers} subscribers · {creator.avgViews} avg views</p>
-        <div className="flex items-center justify-between text-xs mb-2">
-          <span style={{ color: palette.textMuted }}>Raised</span>
-          <span style={{ color: palette.text }}>${creator.raisedAmount.toLocaleString()} / ${creator.targetAmount.toLocaleString()}</span>
+        <p className="text-xs mb-3" style={{ color: palette.textMuted }}>{c.subscribers} subscribers · {c.avg_views} avg views</p>
+        <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ backgroundColor: palette.surfaceAlt }}>
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: palette.gradient }} />
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: palette.surfaceAlt }}>
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${pct}%`, background: palette.gradient }}
-          />
-        </div>
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-2">
           <div>
             <span className="text-xs" style={{ color: palette.textMuted }}>Base return: </span>
-            <span className="text-sm font-bold" style={{ color: palette.success }}>+{creator.returnBase}%</span>
+            <span className="text-sm font-bold" style={{ color: palette.success }}>{c.return_base >= 0 ? '+' : ''}{c.return_base}%</span>
           </div>
           <div className="flex items-center gap-1 text-xs" style={{ color: palette.primary }}>
             View <ChevronRight size={12} />
@@ -108,8 +113,16 @@ function MiniCreatorCard({ creator }: { creator: typeof creators[0] }) {
 export function Home() {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [campaigns, setCampaigns] = useState<LiveCampaign[]>([]);
 
-  const featured = creators.slice(0, 3);
+  useEffect(() => {
+    callApi<LiveCampaign[]>('listLiveCampaigns_Marketplace')
+      .then(res => setCampaigns(res.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const featured = campaigns.slice(0, 3);
 
   return (
     <div style={{ backgroundColor: palette.bg, minHeight: '100vh' }}>
@@ -134,7 +147,7 @@ export function Home() {
             className="text-5xl md:text-6xl font-black tracking-tight leading-tight mb-6"
             style={{ color: palette.text }}
           >
-            Invest in Creators
+            Back the Creators
             <br />
             <span style={{ background: palette.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               You Believe In
@@ -154,13 +167,15 @@ export function Home() {
             >
               Browse Marketplace <ArrowRight size={16} />
             </button>
-            <button
-              onClick={() => navigate('/onboard')}
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
-              style={{ backgroundColor: palette.surfaceAlt, color: palette.text, border: `1px solid ${palette.border}` }}
-            >
-              List Your Channel
-            </button>
+            {user?.role === 'creator' && (
+              <button
+                onClick={() => navigate('/onboard')}
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
+                style={{ backgroundColor: palette.surfaceAlt, color: palette.text, border: `1px solid ${palette.border}` }}
+              >
+                List Your Channel
+              </button>
+            )}
           </div>
         </div>
 
@@ -170,8 +185,8 @@ export function Home() {
           style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
         >
           <StatCard value="142" label="Creators Onboarded" color={palette.primary} />
-          <StatCard value="$2.4M" label="Paper Investments" color={palette.accent} />
-          <StatCard value="3,800+" label="Fan Investors" color={palette.success} />
+          <StatCard value="$2.4M" label="Paper Backed" color={palette.accent} />
+          <StatCard value="3,800+" label="Fan Backers" color={palette.success} />
           <StatCard value="94%" label="Forecast Accuracy" color={palette.primaryLight} />
         </div>
       </section>
@@ -219,41 +234,59 @@ export function Home() {
             View all <ArrowRight size={14} />
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {featured.map(c => (
-            <MiniCreatorCard key={c.id} creator={c} />
-          ))}
-        </div>
-      </section>
-
-      {/* CTA Banner */}
-      <section className="px-6 py-16 max-w-7xl mx-auto">
-        <div
-          className="rounded-2xl p-10 text-center relative overflow-hidden"
-          style={{ background: palette.gradient }}
-        >
+        {featured.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {featured.map(c => (
+              <MiniCampaignCard key={c.campaign_id} c={c} />
+            ))}
+          </div>
+        ) : (
           <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 0%, transparent 60%)' }}
-          />
-          <div className="relative">
-            <Shield size={32} className="mx-auto mb-4" style={{ color: palette.onPrimary, opacity: 0.8 }} />
-            <h2 className="text-2xl font-bold mb-3" style={{ color: palette.onPrimary }}>
-              Are you a creator?
-            </h2>
-            <p className="mb-6 max-w-md mx-auto" style={{ color: `${palette.onPrimary}cc` }}>
-              Submit your YouTube channel and get a free AI underwriting report in minutes. No OAuth, no hassle.
-            </p>
+            className="rounded-2xl p-10 text-center"
+            style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
+          >
+            <p className="text-sm" style={{ color: palette.textMuted }}>No live campaigns yet — be the first to back a creator!</p>
             <button
-              onClick={() => navigate('/onboard')}
-              className="px-6 py-3 rounded-xl font-semibold text-sm inline-flex items-center gap-2"
-              style={{ backgroundColor: palette.bg, color: palette.primary }}
+              onClick={() => navigate('/marketplace')}
+              className="mt-3 text-sm font-semibold"
+              style={{ color: palette.primary }}
             >
-              Get My Free Report <ArrowRight size={16} />
+              Browse Marketplace <ArrowRight size={13} className="inline" />
             </button>
           </div>
-        </div>
+        )}
       </section>
+
+      {/* CTA Banner — only for creators */}
+      {user?.role === 'creator' && (
+        <section className="px-6 py-16 max-w-7xl mx-auto">
+          <div
+            className="rounded-2xl p-10 text-center relative overflow-hidden"
+            style={{ background: palette.gradient }}
+          >
+            <div
+              className="absolute inset-0 opacity-10 pointer-events-none"
+              style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, white 0%, transparent 60%)' }}
+            />
+            <div className="relative">
+              <Shield size={32} className="mx-auto mb-4" style={{ color: palette.onPrimary, opacity: 0.8 }} />
+              <h2 className="text-2xl font-bold mb-3" style={{ color: palette.onPrimary }}>
+                Ready to list your channel?
+              </h2>
+              <p className="mb-6 max-w-md mx-auto" style={{ color: `${palette.onPrimary}cc` }}>
+                Submit your YouTube channel and get a free AI underwriting report in minutes. No OAuth, no hassle.
+              </p>
+              <button
+                onClick={() => navigate('/onboard')}
+                className="px-6 py-3 rounded-xl font-semibold text-sm inline-flex items-center gap-2"
+                style={{ backgroundColor: palette.bg, color: palette.primary }}
+              >
+                Get My Free Report <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

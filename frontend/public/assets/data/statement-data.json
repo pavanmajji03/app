@@ -1,0 +1,22 @@
+{
+  "status": "success",
+  "message": "Statement data fetched successfully",
+  "data": {
+    "month": "February 2026",
+    "investorName": "Alex Rivera",
+    "creatorName": "TechVault",
+    "creatorHandle": "@techvault",
+    "investedAmount": 500,
+    "revenueShare": 5,
+    "term": 12,
+    "actualViews": 58200000,
+    "estimatedViews": { "low": 38000000, "base": 55000000, "high": 78000000 },
+    "estimatedRPM": 4.2,
+    "estimatedRevenue": 244440,
+    "yourShareRate": 0.05,
+    "yourPayout": 6.22,
+    "cumulativeEarned": 12.22,
+    "projectedTotal": { "low": 45, "base": 80, "high": 140 },
+    "performanceNotes": "Channel exceeded base forecast by +5.8% in February. Strong performance driven by a viral video (3.4M views) and consistent upload cadence."
+  }
+}

@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { Youtube, Instagram, Twitter, Video, ChevronRight, Check, Zap, Shield, TrendingUp } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import type { OnboardingConfig } from '../data/mockData';
+import { PlayCircle, AtSign, Video, ChevronRight, Check, Zap, Shield, TrendingUp, Link } from 'lucide-react';
 
-const steps = ['Channel', 'Social Links', 'Upcoming Video', 'Review'];
-
-function StepIndicator({ current }: { current: number }) {
+function StepIndicator({ current, steps }: { current: number; steps: string[] }) {
   const { palette } = useTheme();
   return (
     <div className="flex items-center gap-0 mb-10">
@@ -15,7 +16,7 @@ function StepIndicator({ current }: { current: number }) {
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all"
               style={{
-                backgroundColor: idx < current ? palette.primary : idx === current ? palette.primary : palette.surfaceAlt,
+                backgroundColor: idx <= current ? palette.primary : palette.surfaceAlt,
                 color: idx <= current ? palette.onPrimary : palette.textSubtle,
               }}
             >
@@ -124,24 +125,111 @@ function TextareaField({ label, placeholder, value, onChange, optional = false }
 export function CreatorOnboarding() {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
+  const [config, setConfig] = useState<OnboardingConfig | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const [form, setForm] = useState({
-    youtubeUrl: 'https://youtube.com/@techvault',
-    instagram: '@techvault',
+    youtubeUrl: '',
+    instagram: '',
     tiktok: '',
-    twitter: '@techvaultYT',
-    videoTitle: 'The M4 MacBook Air vs M4 MacBook Pro — Which Should You Buy?',
-    videoDesc: 'A comprehensive comparison of Apple\'s latest MacBook lineup for 2026...',
-    videoDate: '2026-03-28',
-    videoFormat: 'Review / Comparison',
+    twitter: '',
+    linkedin: '',
+    videoTitle: '',
+    videoDesc: '',
+    videoDate: '',
+    videoFormat: '',
   });
 
-  const set = (key: string) => (v: string) => setForm(f => ({ ...f, [key]: v }));
+  useEffect(() => {
+    callApi<OnboardingConfig>('getOnboardingConfig_CreatorOnboarding').then(async res => {
+      setConfig(res.data);
 
+      // 1. Try DB via saved creator_id
+      const creatorId = user?.email ? localStorage.getItem(`fanfolio_creator_id_${user.email}`) : null;
+      if (creatorId) {
+        try {
+          const formRes = await callApi<{
+            youtube_url: string | null;
+            instagram_username: string | null;
+            twitter_handle: string | null;
+            tiktok_handle: string | null;
+            linkedin_url: string | null;
+          }>('getCreatorForm_CreatorOnboarding', { pathParams: { creator_id: creatorId } });
+          const d = formRes.data;
+          if (d.youtube_url) {
+            setForm(f => ({
+              ...f,
+              youtubeUrl: d.youtube_url ?? '',
+              instagram: d.instagram_username ?? '',
+              twitter: d.twitter_handle ?? '',
+              tiktok: d.tiktok_handle ?? '',
+              linkedin: d.linkedin_url ?? '',
+            }));
+            return;
+          }
+        } catch {}
+      }
+
+      // 2. Fallback: localStorage cache (saved on last submit)
+      const cached = user?.email ? localStorage.getItem(`fanfolio_form_cache_${user.email}`) : null;
+      if (cached) {
+        try {
+          const f = JSON.parse(cached);
+          if (f.youtubeUrl) { setForm(prev => ({ ...prev, ...f })); return; }
+        } catch {}
+      }
+
+      // 3. Default empty form
+      setForm({ ...res.data.defaultForm, linkedin: res.data.defaultForm.linkedin ?? '' });
+    });
+  }, [user]);
+
+  if (!config) return null;
+
+  const steps = config.steps;
+  const set = (key: string) => (v: string) => setForm(f => ({ ...f, [key]: v }));
   const canProceed = step === 0 ? form.youtubeUrl.length > 0 : true;
 
-  const handleSubmit = () => navigate('/analysis');
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const res = await callApi<{ analysis_id: string; creator_id: string; status: string }>(
+        'analyzeCreator_CreatorOnboarding',
+        {
+          payload: {
+            channel_input: form.youtubeUrl,
+            instagram_username: form.instagram || null,
+            twitter_handle: form.twitter || null,
+            tiktok_handle: form.tiktok || null,
+            linkedin_url: form.linkedin || null,
+          },
+        }
+      );
+      sessionStorage.setItem('fanfolio_analysis_id', res.data.analysis_id);
+      sessionStorage.removeItem('fanfolio_anim_done'); // always play animation fresh for new submission
+      // Persist so login-refresh can resume polling at /analysis
+      if (user?.email) {
+        localStorage.setItem(`fanfolio_analysis_id_${user.email}`, res.data.analysis_id);
+        localStorage.setItem(`fanfolio_creator_id_${user.email}`, res.data.creator_id);
+        // Cache form values so pre-population works even if DB record has no fields yet
+        localStorage.setItem(`fanfolio_form_cache_${user.email}`, JSON.stringify({
+          youtubeUrl: form.youtubeUrl,
+          instagram: form.instagram,
+          twitter: form.twitter,
+          tiktok: form.tiktok,
+          linkedin: form.linkedin,
+        }));
+      }
+      navigate('/analysis');
+    } catch {
+      setSubmitError('Could not reach the analysis server. Please try again.');
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div style={{ backgroundColor: palette.bg, minHeight: '100vh' }}>
@@ -160,13 +248,14 @@ export function CreatorOnboarding() {
           </p>
         </div>
 
-        <StepIndicator current={step} />
+        <StepIndicator current={step} steps={steps} />
 
         {/* Form Card */}
         <div
           className="rounded-2xl p-6 mb-6"
           style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
         >
+          {/* Step 0: YouTube Channel */}
           {step === 0 && (
             <div>
               <h2 className="font-bold text-lg mb-1" style={{ color: palette.text }}>Your YouTube Channel</h2>
@@ -178,27 +267,16 @@ export function CreatorOnboarding() {
                 placeholder="https://youtube.com/@yourchannel"
                 value={form.youtubeUrl}
                 onChange={set('youtubeUrl')}
-                icon={Youtube}
+                icon={PlayCircle}
                 hint="We'll automatically pull public channel data — subscribers, views, upload history, etc."
               />
-
-              {/* What we analyze */}
               <div
                 className="mt-5 rounded-xl p-4"
                 style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}
               >
                 <p className="text-xs font-semibold mb-3" style={{ color: palette.text }}>What we automatically analyze:</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {[
-                    'Subscriber count & growth',
-                    'Last 30 videos performance',
-                    'View velocity & trend',
-                    'Engagement rate',
-                    'Upload consistency',
-                    'Concentration risk',
-                    'Topic trending signals',
-                    'Cross-platform mentions',
-                  ].map(item => (
+                  {config.analysisChecklist.map(item => (
                     <div key={item} className="flex items-center gap-1.5">
                       <Check size={11} style={{ color: palette.success }} />
                       <span className="text-xs" style={{ color: palette.textMuted }}>{item}</span>
@@ -209,6 +287,7 @@ export function CreatorOnboarding() {
             </div>
           )}
 
+          {/* Step 1: Social Links */}
           {step === 1 && (
             <div>
               <h2 className="font-bold text-lg mb-1" style={{ color: palette.text }}>Social Media Links</h2>
@@ -220,7 +299,23 @@ export function CreatorOnboarding() {
                 placeholder="@yourusername"
                 value={form.instagram}
                 onChange={set('instagram')}
-                icon={Instagram}
+                icon={AtSign}
+                optional
+              />
+              <InputField
+                label="X / Twitter"
+                placeholder="@yourusername"
+                value={form.twitter}
+                onChange={set('twitter')}
+                icon={AtSign}
+                optional
+              />
+              <InputField
+                label="LinkedIn"
+                placeholder="https://linkedin.com/in/yourprofile"
+                value={form.linkedin}
+                onChange={set('linkedin')}
+                icon={Link}
                 optional
               />
               <InputField
@@ -231,15 +326,6 @@ export function CreatorOnboarding() {
                 icon={Video}
                 optional
               />
-              <InputField
-                label="X / Twitter"
-                placeholder="@yourusername"
-                value={form.twitter}
-                onChange={set('twitter')}
-                icon={Twitter}
-                optional
-              />
-
               <div
                 className="mt-2 p-3 rounded-xl flex items-start gap-2"
                 style={{ backgroundColor: `${palette.primary}10`, border: `1px solid ${palette.primary}20` }}
@@ -252,6 +338,7 @@ export function CreatorOnboarding() {
             </div>
           )}
 
+          {/* Step 2: Upcoming Video */}
           {step === 2 && (
             <div>
               <h2 className="font-bold text-lg mb-1" style={{ color: palette.text }}>Upcoming Video (Optional)</h2>
@@ -260,7 +347,7 @@ export function CreatorOnboarding() {
               </p>
               <InputField
                 label="Video Title"
-                placeholder="e.g. The Best Laptops of 2026 — Full Breakdown"
+                placeholder="e.g. Why Indian Startups Are Unprofitable | KATA 6"
                 value={form.videoTitle}
                 onChange={set('videoTitle')}
                 optional
@@ -291,6 +378,7 @@ export function CreatorOnboarding() {
             </div>
           )}
 
+          {/* Step 3: Review */}
           {step === 3 && (
             <div>
               <h2 className="font-bold text-lg mb-1" style={{ color: palette.text }}>Review & Submit</h2>
@@ -300,10 +388,12 @@ export function CreatorOnboarding() {
 
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'YouTube Channel', value: form.youtubeUrl, icon: Youtube },
-                  { label: 'Instagram', value: form.instagram || '—', icon: Instagram },
-                  { label: 'X / Twitter', value: form.twitter || '—', icon: Twitter },
-                  { label: 'Upcoming Video', value: form.videoTitle || '—', icon: Video },
+                  { label: 'YouTube Channel', value: form.youtubeUrl,           icon: PlayCircle },
+                  { label: 'Instagram',        value: form.instagram || '—',    icon: AtSign },
+                  { label: 'X / Twitter',      value: form.twitter || '—',      icon: AtSign },
+                  { label: 'LinkedIn',         value: form.linkedin || '—',     icon: Link },
+                  { label: 'TikTok',           value: form.tiktok || '—',       icon: Video },
+                  { label: 'Upcoming Video',   value: form.videoTitle || '—',   icon: PlayCircle },
                 ].map(item => (
                   <div
                     key={item.label}
@@ -341,6 +431,7 @@ export function CreatorOnboarding() {
           {step > 0 && (
             <button
               onClick={() => setStep(s => s - 1)}
+              disabled={submitting}
               className="px-5 py-3 rounded-xl text-sm font-medium"
               style={{ backgroundColor: palette.surfaceAlt, color: palette.textMuted, border: `1px solid ${palette.border}` }}
             >
@@ -349,23 +440,31 @@ export function CreatorOnboarding() {
           )}
           <button
             onClick={step < steps.length - 1 ? () => setStep(s => s + 1) : handleSubmit}
-            disabled={!canProceed}
+            disabled={!canProceed || submitting}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all"
             style={{
-              background: canProceed ? palette.gradient : palette.surfaceAlt,
-              color: canProceed ? palette.onPrimary : palette.textSubtle,
-              cursor: canProceed ? 'pointer' : 'not-allowed',
+              background: canProceed && !submitting ? palette.gradient : palette.surfaceAlt,
+              color: canProceed && !submitting ? palette.onPrimary : palette.textSubtle,
+              cursor: canProceed && !submitting ? 'pointer' : 'not-allowed',
             }}
           >
             {step < steps.length - 1 ? (
               <>Continue <ChevronRight size={16} /></>
+            ) : submitting ? (
+              <><Zap size={16} className="animate-pulse" /> Starting Analysis...</>
             ) : (
               <><Zap size={16} /> Run AI Analysis</>
             )}
           </button>
         </div>
 
-        {step === 0 && (
+        {submitError && (
+          <p className="text-center text-xs mt-3 font-medium" style={{ color: palette.danger }}>
+            {submitError}
+          </p>
+        )}
+
+        {step === 0 && !submitError && (
           <p className="text-center text-xs mt-3" style={{ color: palette.textSubtle }}>
             Takes under 2 minutes · No credit card required
           </p>

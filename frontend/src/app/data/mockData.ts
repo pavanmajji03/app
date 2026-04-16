@@ -1,357 +1,217 @@
-export const creators = [
-  {
-    id: 'techvault',
-    name: 'TechVault',
-    handle: '@techvault',
-    category: 'Tech Reviews',
-    image: 'https://images.unsplash.com/photo-1764664035133-0d2ca12016dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '8.2M',
-    subscribersNum: 8200000,
-    avgViews: '1.4M',
-    totalViews: '2.1B',
-    growthRate: '+18%',
-    engagementRate: '6.2%',
-    uploadFreq: '2× / week',
-    aiScore: 87,
-    riskLevel: 'Low',
-    targetAmount: 50000,
-    raisedAmount: 38500,
-    investorCount: 124,
-    term: 12,
-    revenueShare: 5,
-    returnLow: 9,
-    returnBase: 16,
-    returnHigh: 28,
-    tags: ['Tech', 'Reviews', 'Gadgets'],
-    description: 'In-depth tech reviews and first looks on the latest gadgets, smartphones, and consumer electronics. Known for rigorous testing methodology and unbiased opinions with a loyal 8M+ subscriber base.',
-    platforms: ['YouTube', 'Instagram', 'X'],
-    location: 'San Francisco, CA',
-    forecastData: {
-      views30: { low: 38, base: 55, high: 78 },
-      views90: { low: 110, base: 165, high: 240 },
-      views180: { low: 210, base: 320, high: 480 },
-    },
-    recentVideos: [
-      { title: 'I Tested Every iPhone 17 Case – The Definitive Ranking', views: '2.1M', daysAgo: 3 },
-      { title: 'Honest Review: The $200 Laptop That Does Everything', views: '1.8M', daysAgo: 7 },
-      { title: 'Why I Switched Back to Android (After 4 Years)', views: '3.4M', daysAgo: 14 },
-      { title: 'The Best Wireless Earbuds of 2026 — Tested All 14', views: '1.2M', daysAgo: 21 },
-    ],
-    riskFactors: {
-      volatility: 22,
-      growthTrend: 85,
-      concentrationRisk: 30,
-      cadenceReliability: 90,
-      platformDiversification: 75,
-    },
-  },
-  {
-    id: 'zoecreates',
-    name: 'Zoe Creates',
-    handle: '@zoecreates',
-    category: 'Lifestyle',
-    image: 'https://images.unsplash.com/photo-1758272422309-070322449526?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '3.1M',
-    subscribersNum: 3100000,
-    avgViews: '520K',
-    totalViews: '640M',
-    growthRate: '+24%',
-    engagementRate: '8.9%',
-    uploadFreq: '3× / week',
-    aiScore: 74,
-    riskLevel: 'Medium',
-    targetAmount: 30000,
-    raisedAmount: 18700,
-    investorCount: 87,
-    term: 6,
-    revenueShare: 7,
-    returnLow: 5,
-    returnBase: 12,
-    returnHigh: 21,
-    tags: ['Lifestyle', 'Fashion', 'Vlog'],
-    description: 'Authentic lifestyle content covering fashion, travel, wellness, and day-in-the-life vlogs. Rapid audience growth with a highly engaged community.',
-    platforms: ['YouTube', 'TikTok', 'Instagram'],
-    location: 'New York, NY',
-    forecastData: {
-      views30: { low: 14, base: 19, high: 28 },
-      views90: { low: 40, base: 56, high: 85 },
-      views180: { low: 75, base: 108, high: 165 },
-    },
-    recentVideos: [
-      { title: 'My Entire Wardrobe Transformation (Day 1–30)', views: '890K', daysAgo: 2 },
-      { title: 'Living on $50/week Challenge – Week 3', views: '620K', daysAgo: 5 },
-      { title: 'I Tried Every Viral TikTok Recipe', views: '1.1M', daysAgo: 9 },
-      { title: 'NYC Apartment Makeover — Full Tour', views: '740K', daysAgo: 17 },
-    ],
-    riskFactors: {
-      volatility: 48,
-      growthTrend: 78,
-      concentrationRisk: 55,
-      cadenceReliability: 82,
-      platformDiversification: 88,
-    },
-  },
-  {
-    id: 'dratom',
-    name: 'Dr. Atom',
-    handle: '@dratom',
-    category: 'Science & Education',
-    image: 'https://images.unsplash.com/photo-1642726197634-2a21f764220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '5.7M',
-    subscribersNum: 5700000,
-    avgViews: '980K',
-    totalViews: '1.1B',
-    growthRate: '+14%',
-    engagementRate: '7.4%',
-    uploadFreq: '1× / week',
-    aiScore: 82,
-    riskLevel: 'Low',
-    targetAmount: 40000,
-    raisedAmount: 31200,
-    investorCount: 98,
-    term: 24,
-    revenueShare: 4,
-    returnLow: 11,
-    returnBase: 19,
-    returnHigh: 31,
-    tags: ['Science', 'Education', 'STEM'],
-    description: 'Making complex science accessible through stunning visualizations. Topics range from quantum mechanics to climate science with unmatched production quality.',
-    platforms: ['YouTube', 'Instagram', 'Newsletter'],
-    location: 'Austin, TX',
-    forecastData: {
-      views30: { low: 27, base: 38, high: 54 },
-      views90: { low: 80, base: 112, high: 162 },
-      views180: { low: 150, base: 215, high: 315 },
-    },
-    recentVideos: [
-      { title: 'What Actually Happens Inside a Black Hole', views: '2.3M', daysAgo: 6 },
-      { title: "The Real Reason You're Always Tired", views: '1.6M', daysAgo: 13 },
-      { title: 'We Broke the Record for Coldest Temperature', views: '1.1M', daysAgo: 20 },
-      { title: 'CRISPR Explained in 12 Minutes', views: '980K', daysAgo: 27 },
-    ],
-    riskFactors: {
-      volatility: 18,
-      growthTrend: 80,
-      concentrationRisk: 25,
-      cadenceReliability: 95,
-      platformDiversification: 62,
-    },
-  },
-  {
-    id: 'kitchenlab',
-    name: 'The Kitchen Lab',
-    handle: '@kitchenlab',
-    category: 'Food & Cooking',
-    image: 'https://images.unsplash.com/photo-1659354219145-dedd2324698e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '2.8M',
-    subscribersNum: 2800000,
-    avgViews: '410K',
-    totalViews: '520M',
-    growthRate: '+11%',
-    engagementRate: '9.1%',
-    uploadFreq: '2× / week',
-    aiScore: 71,
-    riskLevel: 'Medium',
-    targetAmount: 25000,
-    raisedAmount: 12400,
-    investorCount: 52,
-    term: 12,
-    revenueShare: 8,
-    returnLow: 4,
-    returnBase: 10,
-    returnHigh: 18,
-    tags: ['Food', 'Cooking', 'Recipes'],
-    description: 'Science-driven cooking experiments and restaurant-quality recipes for home cooks. Renowned for innovative techniques and deeply satisfying results.',
-    platforms: ['YouTube', 'Instagram', 'TikTok'],
-    location: 'Chicago, IL',
-    forecastData: {
-      views30: { low: 10, base: 14, high: 21 },
-      views90: { low: 29, base: 42, high: 63 },
-      views180: { low: 54, base: 80, high: 120 },
-    },
-    recentVideos: [
-      { title: "Making Gordon Ramsay's Beef Wellington — But Better", views: '780K', daysAgo: 4 },
-      { title: 'The Perfect Ramen From Scratch (2-Day Process)', views: '560K', daysAgo: 11 },
-      { title: "I Ate At The World's Best Restaurant – Here's How", views: '1.0M', daysAgo: 18 },
-      { title: 'Fermentation Deep Dive: 10 Experiments', views: '490K', daysAgo: 26 },
-    ],
-    riskFactors: {
-      volatility: 52,
-      growthTrend: 65,
-      concentrationRisk: 60,
-      cadenceReliability: 78,
-      platformDiversification: 70,
-    },
-  },
-  {
-    id: 'fitjordan',
-    name: 'FitWithJordan',
-    handle: '@fitwithjordan',
-    category: 'Fitness & Health',
-    image: 'https://images.unsplash.com/photo-1758599879065-46fd59235166?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '4.2M',
-    subscribersNum: 4200000,
-    avgViews: '720K',
-    totalViews: '890M',
-    growthRate: '+21%',
-    engagementRate: '11.3%',
-    uploadFreq: '3× / week',
-    aiScore: 79,
-    riskLevel: 'Low-Med',
-    targetAmount: 35000,
-    raisedAmount: 22100,
-    investorCount: 76,
-    term: 12,
-    revenueShare: 6,
-    returnLow: 7,
-    returnBase: 14,
-    returnHigh: 24,
-    tags: ['Fitness', 'Health', 'Wellness'],
-    description: 'Evidence-based fitness content with no-equipment workouts, nutrition science, and mental wellness. One of the fastest-growing fitness channels globally.',
-    platforms: ['YouTube', 'Instagram', 'TikTok'],
-    location: 'Miami, FL',
-    forecastData: {
-      views30: { low: 19, base: 27, high: 40 },
-      views90: { low: 56, base: 80, high: 120 },
-      views180: { low: 105, base: 152, high: 230 },
-    },
-    recentVideos: [
-      { title: '30-Day Body Recomposition – My Full Protocol', views: '1.4M', daysAgo: 2 },
-      { title: 'The Science of Sleep & Muscle Growth', views: '920K', daysAgo: 5 },
-      { title: 'I Trained Like An Olympic Athlete for 30 Days', views: '2.1M', daysAgo: 10 },
-      { title: 'Why You\'re Not Losing Fat (The Real Reason)', views: '1.7M', daysAgo: 16 },
-    ],
-    riskFactors: {
-      volatility: 35,
-      growthTrend: 82,
-      concentrationRisk: 40,
-      cadenceReliability: 87,
-      platformDiversification: 85,
-    },
-  },
-  {
-    id: 'moneymoves',
-    name: 'MoneyMoves',
-    handle: '@moneymovesHQ',
-    category: 'Finance',
-    image: 'https://images.unsplash.com/photo-1763038311036-6d18805537e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    subscribers: '1.9M',
-    subscribersNum: 1900000,
-    avgViews: '290K',
-    totalViews: '310M',
-    growthRate: '+8%',
-    engagementRate: '5.7%',
-    uploadFreq: '1× / week',
-    aiScore: 63,
-    riskLevel: 'High',
-    targetAmount: 20000,
-    raisedAmount: 7800,
-    investorCount: 31,
-    term: 6,
-    revenueShare: 10,
-    returnLow: 2,
-    returnBase: 8,
-    returnHigh: 17,
-    tags: ['Finance', 'Investing', 'Money'],
-    description: 'Breaking down complex financial concepts into actionable strategies. Covers stock market, real estate, crypto, and personal finance with a candid approach.',
-    platforms: ['YouTube', 'X', 'Newsletter'],
-    location: 'Austin, TX',
-    forecastData: {
-      views30: { low: 7, base: 10, high: 16 },
-      views90: { low: 20, base: 30, high: 48 },
-      views180: { low: 37, base: 57, high: 92 },
-    },
-    recentVideos: [
-      { title: 'I Invested $10K in 10 Different Assets – 1 Year Later', views: '540K', daysAgo: 7 },
-      { title: 'The Budget That Made Me $200K Before 30', views: '380K', daysAgo: 14 },
-      { title: 'Why The S&P 500 Is A Trap (And What To Do Instead)', views: '610K', daysAgo: 21 },
-      { title: 'My Crypto Portfolio — Full Transparency', views: '460K', daysAgo: 29 },
-    ],
-    riskFactors: {
-      volatility: 68,
-      growthTrend: 52,
-      concentrationRisk: 72,
-      cadenceReliability: 65,
-      platformDiversification: 45,
-    },
-  },
-];
+// Type definitions derived from the data structure in /public/assets/data/creators.json
+// All actual data has been moved to static JSON files served via GET requests.
 
-export type Creator = typeof creators[0];
+export interface Creator {
+  id: string;
+  name: string;
+  handle: string;
+  category: string;
+  image: string;
+  subscribers: string;
+  subscribersNum: number;
+  avgViews: string;
+  totalViews: string;
+  growthRate: string;
+  engagementRate: string;
+  uploadFreq: string;
+  aiScore: number;
+  riskLevel: string;
+  targetAmount: number;
+  raisedAmount: number;
+  investorCount: number;
+  term: number;
+  revenueShare: number;
+  returnLow: number;
+  returnBase: number;
+  returnHigh: number;
+  tags: string[];
+  description: string;
+  platforms: string[];
+  location: string;
+  forecastData: {
+    views30: { low: number; base: number; high: number };
+    views90: { low: number; base: number; high: number };
+    views180: { low: number; base: number; high: number };
+  };
+  recentVideos: { title: string; views: string; daysAgo: number; thumbnail?: string }[];
+  riskFactors: {
+    volatility: number;
+    growthTrend: number;
+    concentrationRisk: number;
+    cadenceReliability: number;
+    platformDiversification: number;
+  };
+}
 
-export const portfolioInvestments = [
-  {
-    id: 'inv001',
-    creatorId: 'techvault',
-    creatorName: 'TechVault',
-    category: 'Tech Reviews',
-    invested: 500,
-    currentValue: 512,
-    earned: 12.22,
-    term: 12,
-    monthsIn: 2,
-    returnBase: 16,
-    status: 'Active',
-    nextPayout: 'April 1, 2026',
-    image: 'https://images.unsplash.com/photo-1764664035133-0d2ca12016dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    monthlyData: [
-      { month: 'Jan', earned: 0, projected: 6.67 },
-      { month: 'Feb', earned: 6.22, projected: 6.67 },
-      { month: 'Mar', earned: 6.00, projected: 6.67 },
-      { month: 'Apr', earned: 0, projected: 6.67 },
-      { month: 'May', earned: 0, projected: 6.67 },
-      { month: 'Jun', earned: 0, projected: 6.67 },
-    ],
-  },
-  {
-    id: 'inv002',
-    creatorId: 'dratom',
-    creatorName: 'Dr. Atom',
-    category: 'Science & Education',
-    invested: 250,
-    currentValue: 257,
-    earned: 3.96,
-    term: 24,
-    monthsIn: 1,
-    returnBase: 19,
-    status: 'Active',
-    nextPayout: 'April 1, 2026',
-    image: 'https://images.unsplash.com/photo-1642726197634-2a21f764220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400',
-    monthlyData: [
-      { month: 'Jan', earned: 0, projected: 3.96 },
-      { month: 'Feb', earned: 0, projected: 3.96 },
-      { month: 'Mar', earned: 3.96, projected: 3.96 },
-      { month: 'Apr', earned: 0, projected: 3.96 },
-      { month: 'May', earned: 0, projected: 3.96 },
-      { month: 'Jun', earned: 0, projected: 3.96 },
-    ],
-  },
-];
+export interface PortfolioInvestment {
+  id: string;
+  creatorId: string;
+  creatorName: string;
+  category: string;
+  invested: number;
+  currentValue: number;
+  earned: number;
+  term: number;
+  monthsIn: number;
+  returnBase: number;
+  status: string;
+  nextPayout: string;
+  image: string;
+  monthlyData: { month: string; earned: number; projected: number }[];
+}
 
-export const statementData = {
-  month: 'February 2026',
-  investorName: 'Alex Rivera',
-  creatorName: 'TechVault',
-  creatorHandle: '@techvault',
-  investedAmount: 500,
-  revenueShare: 5,
-  term: 12,
-  actualViews: 58200000,
-  estimatedViews: { low: 38000000, base: 55000000, high: 78000000 },
-  estimatedRPM: 4.2,
-  estimatedRevenue: 244440,
-  yourShareRate: 0.05,
-  yourPayout: 6.22,
-  cumulativeEarned: 12.22,
-  projectedTotal: { low: 45, base: 80, high: 140 },
-  performanceNotes: 'Channel exceeded base forecast by +5.8% in February. Strong performance driven by a viral video (3.4M views) and consistent upload cadence.'
-};
+export interface PortfolioChartPoint {
+  month: string;
+  portfolio: number;
+  earned: number;
+}
 
-export const portfolioChartData = [
-  { month: 'Jan', portfolio: 750, earned: 0 },
-  { month: 'Feb', portfolio: 762, earned: 6.22 },
-  { month: 'Mar', portfolio: 769, earned: 3.96 },
-  { month: 'Apr', portfolio: 769, earned: 0 },
-  { month: 'May', portfolio: 769, earned: 0 },
-  { month: 'Jun', portfolio: 769, earned: 0 },
-];
+export interface StatementData {
+  month: string;
+  investorName: string;
+  creatorName: string;
+  creatorHandle: string;
+  investedAmount: number;
+  revenueShare: number;
+  term: number;
+  actualViews: number;
+  estimatedViews: { low: number; base: number; high: number };
+  estimatedRPM: number;
+  estimatedRevenue: number;
+  yourShareRate: number;
+  yourPayout: number;
+  cumulativeEarned: number;
+  projectedTotal: { low: number; base: number; high: number };
+  performanceNotes: string;
+}
+
+export interface InvestorActivity {
+  name: string;
+  amount: number;
+  days: number;
+}
+
+export interface TermOption {
+  months: number;
+  label: string;
+  desc: string;
+  popular: boolean;
+}
+
+export interface AnalysisStep {
+  id: number;
+  icon: string;
+  label: string;
+  detail: string;
+  duration: number;
+}
+
+export interface SignalSummary {
+  label: string;
+  value: string;
+}
+
+export interface OnboardingConfig {
+  steps: string[];
+  defaultForm: {
+    youtubeUrl: string;
+    instagram: string;
+    tiktok: string;
+    twitter: string;
+    linkedin: string;
+    videoTitle: string;
+    videoDesc: string;
+    videoDate: string;
+    videoFormat: string;
+  };
+  analysisChecklist: string[];
+}
+
+export interface AnalysisChannel {
+  ai_underwriting_report: {
+    channel_name: string;
+    handle: string;
+    niche: string;
+    location: string;
+    subscribers: string;
+    avg_views: string;
+    growth_rate: string;
+    ai_score: number;
+    ai_score_label: string;
+    total_views: string;
+    total_videos: string;
+    recent_performance: string;
+  };
+  youtube_signals: {
+    subscribers: string;
+    total_views: string;
+    recent_videos: string;
+    growth_rate: string;
+    cadence: string;
+    notes: string;
+  };
+  social_signals: {
+    instagram: { username: string; followers: string; engagement_rate: string };
+    twitter_x: { handle: string; followers: string; bio: string };
+    linkedin: { url: string; followers: string };
+    cross_platform_momentum: string;
+    no_controversy_flags: boolean;
+  };
+  trending_topics_analysis: {
+    analyzed: boolean;
+    top_trending_topics: string[];
+    momentum: string;
+  };
+  view_forecast_millions_180_days: {
+    low_conservative: { '30d': number; '90d': number; '180d': number; notes: string };
+    base_expected:    { '30d': number; '90d': number; '180d': number; notes: string };
+    high_optimistic:  { '30d': number; '90d': number; '180d': number; notes: string };
+  };
+  revenue_scenarios_180_days_youtube_only: {
+    low_conservative: { views: string; estimated_adSense: string; notes: string };
+    base_expected:    { views: string; estimated_adSense: string; notes: string };
+    high_optimistic:  { views: string; estimated_adSense: string; notes: string };
+  };
+  campaign_readiness: {
+    overall_score: string;
+    qualifies_for_campaign: boolean;
+    message: string;
+  };
+  risk_factor_analysis: {
+    growth_trend: number;
+    cadence_reliability: number;
+    platform_diversification: number;
+    low_volatility_higher_is_better: number;
+    low_concentration_risk_higher_is_better: number;
+  };
+  ai_assessment_summary: {
+    strengths: string[];
+    watch_factors: string[];
+    youtube_only_adSense_monthly: string;
+    confidence_score: number;
+    confidence_based_on: string;
+  };
+}
+
+export interface ReportSignals {
+  signalGroups: {
+    icon: string;
+    label: string;
+    items: string[];
+  }[];
+  revenueScenarios: {
+    key: string;
+    label: string;
+    description: string;
+    views: string;
+    revenue: string;
+    fanReturn: string;
+    color: string;
+  }[];
+  assessment: {
+    strengths: string[];
+    watchFactors: string[];
+    confidenceScore: string;
+  };
+}
+

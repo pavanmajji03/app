@@ -1,0 +1,52 @@
+{
+  "status": "success",
+  "message": "Portfolio investments fetched successfully",
+  "data": [
+    {
+      "id": "inv001",
+      "creatorId": "techvault",
+      "creatorName": "TechVault",
+      "category": "Tech Reviews",
+      "invested": 500,
+      "currentValue": 512,
+      "earned": 12.22,
+      "term": 12,
+      "monthsIn": 2,
+      "returnBase": 16,
+      "status": "Active",
+      "nextPayout": "April 1, 2026",
+      "image": "https://images.unsplash.com/photo-1764664035133-0d2ca12016dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
+      "monthlyData": [
+        { "month": "Jan", "earned": 0, "projected": 6.67 },
+        { "month": "Feb", "earned": 6.22, "projected": 6.67 },
+        { "month": "Mar", "earned": 6.00, "projected": 6.67 },
+        { "month": "Apr", "earned": 0, "projected": 6.67 },
+        { "month": "May", "earned": 0, "projected": 6.67 },
+        { "month": "Jun", "earned": 0, "projected": 6.67 }
+      ]
+    },
+    {
+      "id": "inv002",
+      "creatorId": "dratom",
+      "creatorName": "Dr. Atom",
+      "category": "Science & Education",
+      "invested": 250,
+      "currentValue": 257,
+      "earned": 3.96,
+      "term": 24,
+      "monthsIn": 1,
+      "returnBase": 19,
+      "status": "Active",
+      "nextPayout": "April 1, 2026",
+      "image": "https://images.unsplash.com/photo-1642726197634-2a21f764220a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=400",
+      "monthlyData": [
+        { "month": "Jan", "earned": 0, "projected": 3.96 },
+        { "month": "Feb", "earned": 0, "projected": 3.96 },
+        { "month": "Mar", "earned": 3.96, "projected": 3.96 },
+        { "month": "Apr", "earned": 0, "projected": 3.96 },
+        { "month": "May", "earned": 0, "projected": 3.96 },
+        { "month": "Jun", "earned": 0, "projected": 3.96 }
+      ]
+    }
+  ]
+}

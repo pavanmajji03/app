@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Term options fetched successfully",
+  "data": [
+    { "months": 3,  "label": "3 months",  "desc": "Short-term trial",              "popular": false },
+    { "months": 6,  "label": "6 months",  "desc": "Most popular term for creators", "popular": true  },
+    { "months": 12, "label": "12 months", "desc": "Long-term partnership",          "popular": false }
+  ]
+}

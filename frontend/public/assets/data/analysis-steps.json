@@ -1,0 +1,18 @@
+{
+  "status": "success",
+  "message": "Analysis steps fetched successfully",
+  "data": {
+    "steps": [
+      { "id": 0, "icon": "Youtube", "label": "Fetching YouTube channel data", "detail": "Subscribers, uploads, view history...", "duration": 1200 },
+      { "id": 1, "icon": "TrendingUp", "label": "Analyzing last 30 videos", "detail": "Views, likes, comments, velocity...", "duration": 1000 },
+      { "id": 2, "icon": "Globe", "label": "Pulling social & trend signals", "detail": "Instagram, X, Google Trends, news mentions...", "duration": 1100 },
+      { "id": 3, "icon": "Brain", "label": "Running AI underwriting model", "detail": "Scoring risk, forecasting scenarios...", "duration": 1400 },
+      { "id": 4, "icon": "Zap", "label": "Generating underwriting report", "detail": "Low / Base / High forecasts + risk breakdown...", "duration": 800 }
+    ],
+    "signalSummary": [
+      { "label": "Data Points", "value": "2,400+" },
+      { "label": "Videos Analyzed", "value": "30" },
+      { "label": "Signals Pulled", "value": "12" }
+    ]
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "baseUrl": "",
+  "defaultHeaders": {
+    "Content-Type": "application/json"
+  },
+  "responseFormat": {
+    "statusKey": "status",
+    "messageKey": "message",
+    "dataKey": "data"
+  },
+  "apis": {
+    "getCreators_Home": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creators for home page featured section",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creator objects"
+      }
+    },
+    "getCreators_Marketplace": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch all creators for marketplace browsing",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creator objects with filtering support"
+      }
+    },
+    "getCategories_Marketplace": {
+      "endpoint": "/assets/data/categories.json",
+      "method": "GET",
+      "description": "Fetch marketplace filter categories",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of category strings"
+      }
+    },
+    "getCreator_CreatorPage": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creator details for creator page",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creators - filter by ID on client"
+      }
+    },
+    "getInvestorActivity_CreatorPage": {
+      "endpoint": "/assets/data/investor-activity.json",
+      "method": "GET",
+      "description": "Fetch recent investor activity for creator page",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of investor activity objects"
+      }
+    },
+    "getPortfolioInvestments_Portfolio": {
+      "endpoint": "/assets/data/portfolio-investments.json",
+      "method": "GET",
+      "description": "Fetch user portfolio investments",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of investment objects"
+      }
+    },
+    "getPortfolioChartData_Portfolio": {
+      "endpoint": "/assets/data/portfolio-chart-data.json",
+      "method": "GET",
+      "description": "Fetch portfolio performance chart data",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of monthly chart data points"
+      }
+    },
+    "getStatementData_Statement": {
+      "endpoint": "/assets/data/statement-data.json",
+      "method": "GET",
+      "description": "Fetch monthly payout statement data",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Statement data with payout details"
+      }
+    },
+    "getOnboardingConfig_CreatorOnboarding": {
+      "endpoint": "/assets/data/onboarding-config.json",
+      "method": "GET",
+      "description": "Fetch onboarding steps, default form values, and analysis checklist",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Onboarding configuration with steps, defaultForm, and analysisChecklist"
+      }
+    },
+    "getAnalysisSteps_CreatorAnalysis": {
+      "endpoint": "/assets/data/analysis-steps.json",
+      "method": "GET",
+      "description": "Fetch AI analysis step definitions and signal summary",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Object with steps array and signalSummary array"
+      }
+    },
+    "getCreator_CreatorReport": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creator data for AI underwriting report",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creators - filter by ID on client"
+      }
+    },
+    "getReportSignals_CreatorReport": {
+      "endpoint": "/assets/data/creator-report-signals.json",
+      "method": "GET",
+      "description": "Fetch signal groups, revenue scenarios, and AI assessment for report",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Object with signalGroups, revenueScenarios, and assessment"
+      }
+    },
+    "getAnalysisChannel_CreatorReport": {
+      "endpoint": "/assets/data/analysis-channel.json",
+      "method": "GET",
+      "description": "Fetch full AI underwriting channel analysis for report page",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Full channel analysis with forecast, revenue scenarios, risk factors, and AI assessment"
+      }
+    },
+    "getCreator_CampaignSetup": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creator data for campaign setup form",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creators - filter by ID on client"
+      }
+    },
+    "getTermOptions_CampaignSetup": {
+      "endpoint": "/assets/data/term-options.json",
+      "method": "GET",
+      "description": "Fetch campaign term options for setup",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of term option objects"
+      }
+    },
+    "getCreator_CampaignLive": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creator data for campaign live page",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creators - filter by ID on client"
+      }
+    },
+    "getCreators_PitchVideo": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creators for PitchVideo presentation scenes",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creator objects for marketplace and report scenes"
+      }
+    },
+    "getCreators_PitchV2": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creators for PitchV2 presentation scenes",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creator objects for marketplace and report scenes"
+      }
+    },
+    "getCreators_PitchV3": {
+      "endpoint": "/assets/data/creators.json",
+      "method": "GET",
+      "description": "Fetch creators for PitchV3 presentation scenes",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of creator objects for discover scene"
+      }
+    },
+    "getFlows_PrototypeBar": {
+      "endpoint": "/assets/data/flows.json",
+      "method": "GET",
+      "description": "Fetch flow definitions for prototype navigation bar",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Object with fanFlow and creatorFlow definitions"
+      }
+    },
+    "analyzeCreator_CreatorOnboarding": {
+      "endpoint": "http://localhost:8001/api/v1/creators/analyze",
+      "method": "POST",
+      "description": "Submit creator channel for AI analysis — returns analysis_id immediately",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "{ analysis_id, creator_id, status: pending }"
+      }
+    },
+    "pollAnalysis_CreatorAnalysis": {
+      "endpoint": "http://localhost:8001/api/v1/creators/analysis/{analysis_id}",
+      "method": "GET",
+      "description": "Poll for analysis result — status: pending | processing | completed | failed",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "{ status, report } — report populated when status=completed"
+      }
+    },
+    "createCampaign_CampaignSetup": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns",
+      "method": "POST",
+      "description": "Creator publishes a campaign — returns campaign_id",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "{ campaign_id, creator_id, term_months, revenue_share_pct, target_amount, ... }"
+      }
+    },
+    "getCampaign_CampaignLive": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/{campaign_id}",
+      "method": "GET",
+      "description": "Fetch a single campaign by ID for the CampaignLive success page",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Campaign object"
+      }
+    },
+    "getCampaignByAnalysis_CreatorPage": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/by-analysis/{analysis_id}",
+      "method": "GET",
+      "description": "Get creator's campaign by analysis_id — used on CreatorPage sidebar",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Campaign object"
+      }
+    },
+    "investInCampaign_CreatorPage": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/{campaign_id}/invest",
+      "method": "POST",
+      "description": "Fan paper-invests in a campaign",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "{ investment_id, campaign_id, fan_email, amount, invested_at }"
+      }
+    },
+    "getCampaignInvestments_CreatorPage": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/{campaign_id}/investments",
+      "method": "GET",
+      "description": "List investments for a campaign — used on CreatorPage investors tab",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of investment objects"
+      }
+    },
+    "getPublicCampaign_CampaignPublic": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/{campaign_id}",
+      "method": "GET",
+      "description": "Public campaign page — fetch campaign by ID for fans",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "Campaign object"
+      }
+    },
+    "getMyInvestments_Portfolio": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns/my-investments/{fan_email}",
+      "method": "GET",
+      "description": "Fetch all investments for a fan by email",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of investment objects with campaign and creator info"
+      }
+    },
+    "getGenres_App": {
+      "endpoint": "http://localhost:8001/api/v1/genres",
+      "method": "GET",
+      "description": "Fetch all genres from DB — used in marketplace filter and signup genre picker",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of genre name strings, sorted alphabetically"
+      }
+    },
+    "getCreatorForm_CreatorOnboarding": {
+      "endpoint": "http://localhost:8001/api/v1/creators/{creator_id}/form",
+      "method": "GET",
+      "description": "Fetch previously entered onboarding form fields for a creator (pre-population on re-run)",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "object",
+        "description": "{ youtube_url, instagram_username, twitter_handle, tiktok_handle, linkedin_url }"
+      }
+    },
+    "listLiveCampaigns_Marketplace": {
+      "endpoint": "http://localhost:8001/api/v1/campaigns",
+      "method": "GET",
+      "description": "List all live campaigns with creator metadata for marketplace",
+      "headers": {},
+      "payload": null,
+      "response": {
+        "type": "array",
+        "description": "Array of campaign objects enriched with creator info, genres, ai_score"
+      }
+    }
+  }
+}

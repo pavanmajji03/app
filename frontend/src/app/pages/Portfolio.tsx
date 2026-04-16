@@ -1,21 +1,34 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { portfolioInvestments, portfolioChartData } from '../data/mockData';
-import { TrendingUp, DollarSign, BarChart2, Clock, ChevronRight, FileText } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import { DollarSign, BarChart2, Clock, ChevronRight, Zap } from 'lucide-react';
+
+interface FanInvestment {
+  investment_id: string;
+  campaign_id: string;
+  amount: number;
+  invested_at: string | null;
+  creator_name: string;
+  creator_handle: string;
+  creator_thumbnail: string;
+  genres: string[];
+  term_months: number;
+  revenue_share_pct: number;
+  return_low: number;
+  return_base: number;
+  return_high: number;
+  start_date: string | null;
+  status: string;
+}
 
 function MetricCard({ icon: Icon, label, value, sub, color }: { icon: any; label: string; value: string; sub?: string; color: string }) {
   const { palette } = useTheme();
   return (
-    <div
-      className="rounded-2xl p-5 flex flex-col gap-3"
-      style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-    >
+    <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
       <div className="flex items-center gap-2">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: `${color}18` }}
-        >
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}18` }}>
           <Icon size={16} style={{ color }} />
         </div>
         <span className="text-xs" style={{ color: palette.textMuted }}>{label}</span>
@@ -28,221 +41,235 @@ function MetricCard({ icon: Icon, label, value, sub, color }: { icon: any; label
   );
 }
 
+function monthsElapsed(investedAt: string | null, startDate: string | null): number {
+  const ref = startDate ?? investedAt;
+  if (!ref) return 0;
+  const from = new Date(ref);
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - from.getFullYear()) * 12 + (now.getMonth() - from.getMonth()));
+}
+
+/**
+ * YouTube YPP payout timeline:
+ *  - Month N revenue earned (e.g. May)
+ *  - Finalized by YouTube ~June 10th
+ *  - YouTube pays creator June 21-26
+ *  - FanZFolio distributes to fans with 2-3 day buffer → by ~July 10th
+ *
+ * So: first payout = start_month + 2 months, around the 10th
+ * Subsequent payouts: every month thereafter on the 10th
+ */
+function nextPayoutDate(startDate: string | null, investedAt: string | null): { label: string; note: string } {
+  const ref = startDate ?? investedAt;
+  if (!ref) return { label: 'TBD', note: 'Once campaign starts' };
+
+  const start = new Date(ref);
+  const firstPayout = new Date(start.getFullYear(), start.getMonth() + 2, 10);
+  const now = new Date();
+
+  let next = new Date(firstPayout);
+  while (next <= now) {
+    next = new Date(next.getFullYear(), next.getMonth() + 1, 10);
+  }
+
+  const fmt = next.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const monthName = new Date(next.getFullYear(), next.getMonth() - 1, 1)
+    .toLocaleDateString('en-US', { month: 'long' });
+  return { label: fmt, note: `For ${monthName} revenue` };
+}
+
 export function Portfolio() {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [investments, setInvestments] = useState<FanInvestment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalInvested = portfolioInvestments.reduce((s, i) => s + i.invested, 0);
-  const totalEarned = portfolioInvestments.reduce((s, i) => s + i.earned, 0);
-  const totalValue = portfolioInvestments.reduce((s, i) => s + i.currentValue, 0);
+  useEffect(() => {
+    if (!user?.email) { setLoading(false); return; }
+    callApi<FanInvestment[]>('getMyInvestments_Portfolio', { pathParams: { fan_email: user.email } })
+      .then(res => { setInvestments(res.data ?? []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [user]);
+
+  const totalInvested = investments.reduce((s, i) => s + i.amount, 0);
+  const nextPayout = investments.length > 0
+    ? investments.map(i => nextPayoutDate(i.start_date, i.invested_at))
+        .sort((a, b) => new Date(a.label).getTime() - new Date(b.label).getTime())[0]
+    : null;
+  const nowLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: palette.bg }}>
+        <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${palette.primary}40`, borderTopColor: 'transparent' }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: palette.bg, minHeight: '100vh' }}>
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-5xl mx-auto px-6 py-10">
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-1" style={{ color: palette.text }}>My Portfolio</h1>
-            <p style={{ color: palette.textMuted }}>Paper investments · March 2026</p>
+            <p style={{ color: palette.textMuted }}>Your paper backing portfolio · {nowLabel}</p>
           </div>
           <button
             onClick={() => navigate('/marketplace')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
             style={{ background: palette.gradient, color: palette.onPrimary }}
           >
-            Add Investment <ChevronRight size={14} />
+            Back a Creator <ChevronRight size={14} />
           </button>
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <MetricCard
-            icon={DollarSign}
-            label="Total Invested"
-            value={`$${totalInvested.toLocaleString()}`}
-            sub="Paper portfolio"
-            color={palette.primary}
-          />
-          <MetricCard
-            icon={TrendingUp}
-            label="Total Earned"
-            value={`$${totalEarned.toFixed(2)}`}
-            sub="+2.1% return so far"
-            color={palette.success}
-          />
-          <MetricCard
-            icon={BarChart2}
-            label="Portfolio Value"
-            value={`$${totalValue.toFixed(0)}`}
-            sub="Updated Mar 2026"
-            color={palette.primaryLight}
-          />
+        <div className="grid grid-cols-3 gap-4 mb-8">
+          <MetricCard icon={DollarSign} label="Total Backed" value={`$${totalInvested.toLocaleString()}`} sub="Paper backing portfolio" color={palette.primary} />
+          <MetricCard icon={BarChart2} label="Creators Backed" value={`${investments.length}`} sub={investments.length === 1 ? '1 active backing' : `${investments.length} active backings`} color={palette.primaryLight} />
           <MetricCard
             icon={Clock}
-            label="Active Campaigns"
-            value={`${portfolioInvestments.length}`}
-            sub="Next payout Apr 1"
+            label="Next Payout"
+            value={nextPayout?.label ?? 'TBD'}
+            sub={nextPayout?.note ?? 'Once campaign starts'}
             color={palette.accent}
           />
         </div>
 
-        {/* Chart + Investments */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Portfolio Chart */}
-          <div
-            className="lg:col-span-2 rounded-2xl p-5"
-            style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-          >
-            <h3 className="font-bold mb-1" style={{ color: palette.text }}>Portfolio Performance</h3>
-            <p className="text-xs mb-5" style={{ color: palette.textMuted }}>Paper portfolio value over time</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={portfolioChartData}>
-                <defs>
-                  <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={palette.primary} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={palette.primary} stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="earnedGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={palette.success} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={palette.success} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={`${palette.border}60`} vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: palette.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: palette.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}`, borderRadius: 10, color: palette.text }}
-                  formatter={(v: any, name: string) => [`$${v}`, name === 'portfolio' ? 'Portfolio Value' : 'Earned']}
-                />
-                <Area type="monotone" dataKey="portfolio" stroke={palette.primary} fill="url(#portfolioGrad)" strokeWidth={2} dot={false} />
-                <Area type="monotone" dataKey="earned" stroke={palette.success} fill="url(#earnedGrad)" strokeWidth={2} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Investments list */}
+        <div>
+          <h3 className="font-bold mb-4" style={{ color: palette.text }}>Creators You're Backing</h3>
 
-          {/* IOI Box */}
-          <div
-            className="rounded-2xl p-5 flex flex-col justify-between"
-            style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}
-          >
-            <div>
-              <div
-                className="text-xs font-bold tracking-wider px-2 py-0.5 rounded inline-block mb-3"
-                style={{ backgroundColor: `${palette.accent}20`, color: palette.accent }}
-              >
-                INDICATION OF INTEREST
-              </div>
-              <h3 className="font-bold mb-2" style={{ color: palette.text }}>Ready for Real Investing?</h3>
-              <p className="text-sm mb-4" style={{ color: palette.textMuted }}>
-                Submit a non-binding IOI — tell us how much you'd invest when real money goes live.
-              </p>
-            </div>
-            <div>
-              <div
-                className="rounded-xl p-4 mb-4"
-                style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-              >
-                <p className="text-xs mb-2" style={{ color: palette.textMuted }}>If real investing were live, I'd invest:</p>
-                <div className="flex gap-2">
-                  {['$500', '$1K', '$5K', '$10K+'].map(amt => (
-                    <button
-                      key={amt}
-                      className="flex-1 text-xs py-1.5 rounded-lg"
-                      style={{ backgroundColor: palette.surfaceAlt, color: palette.textMuted, border: `1px solid ${palette.border}` }}
-                    >
-                      {amt}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {investments.length === 0 ? (
+            <div
+              className="rounded-2xl p-12 text-center"
+              style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
+            >
+              <Zap size={32} className="mx-auto mb-4 opacity-30" style={{ color: palette.primary }} />
+              <p className="font-semibold mb-1" style={{ color: palette.text }}>You haven't backed any creators yet</p>
+              <p className="text-sm mb-4" style={{ color: palette.textMuted }}>Browse the marketplace and back a creator you believe in.</p>
               <button
-                className="w-full py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: palette.accentGradient, color: palette.onAccent }}
+                onClick={() => navigate('/marketplace')}
+                className="px-6 py-2.5 rounded-xl font-semibold text-sm"
+                style={{ background: palette.gradient, color: palette.onPrimary }}
               >
-                Submit IOI
+                Browse Marketplace
               </button>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {investments.map(inv => {
+                const elapsed = monthsElapsed(inv.invested_at, inv.start_date);
+                const pct = Math.min(100, Math.round((elapsed / inv.term_months) * 100));
+                const investedDate = inv.invested_at
+                  ? new Date(inv.invested_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : '—';
+                const payout = nextPayoutDate(inv.start_date, inv.invested_at);
+                const startLabel = inv.start_date
+                  ? new Date(inv.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                  : 'TBD';
 
-        {/* Investments */}
-        <div className="mt-6">
-          <h3 className="font-bold mb-4" style={{ color: palette.text }}>Active Investments</h3>
-          <div className="flex flex-col gap-4">
-            {portfolioInvestments.map(inv => {
-              const pct = Math.round((inv.monthsIn / inv.term) * 100);
-              return (
-                <div
-                  key={inv.id}
-                  className="rounded-2xl p-5"
-                  style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-                >
-                  <div className="flex flex-col md:flex-row md:items-center gap-4">
-                    {/* Creator Info */}
-                    <div className="flex items-center gap-3 flex-1">
-                      <div
-                        className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0"
-                        style={{ border: `2px solid ${palette.primary}` }}
-                      >
-                        <img src={inv.image} alt={inv.creatorName} className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm" style={{ color: palette.text }}>{inv.creatorName}</p>
-                        <p className="text-xs" style={{ color: palette.textMuted }}>{inv.category}</p>
+                return (
+                  <div
+                    key={inv.investment_id}
+                    className="rounded-2xl p-5"
+                    style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
+                  >
+                    {/* Top row: creator + action */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
                         <div
-                          className="text-xs px-1.5 py-0.5 rounded mt-1 inline-block"
-                          style={{ backgroundColor: `${palette.success}15`, color: palette.success }}
+                          className="w-11 h-11 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                          style={{ border: `2px solid ${palette.primary}30`, backgroundColor: `${palette.primary}18` }}
                         >
-                          Active
+                          {inv.creator_thumbnail
+                            ? <img src={inv.creator_thumbnail} alt={inv.creator_name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                            : <span className="text-base font-black opacity-40" style={{ color: palette.primary }}>{inv.creator_name?.[0]}</span>
+                          }
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm" style={{ color: palette.text }}>{inv.creator_name}</p>
+                          <p className="text-xs" style={{ color: palette.textMuted }}>{inv.creator_handle}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 ml-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${palette.success}15`, color: palette.success }}>Active</span>
+                          {inv.genres[0] && (
+                            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${palette.primary}15`, color: palette.primary }}>{inv.genres[0]}</span>
+                          )}
                         </div>
                       </div>
+                      <button
+                        onClick={() => navigate(`/campaign/${inv.campaign_id}`)}
+                        className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-xl flex-shrink-0"
+                        style={{ backgroundColor: palette.surfaceAlt, color: palette.primary, border: `1px solid ${palette.border}` }}
+                      >
+                        View Campaign <ChevronRight size={11} />
+                      </button>
                     </div>
 
-                    {/* Metrics */}
-                    <div className="grid grid-cols-3 gap-4 flex-1">
-                      <div>
-                        <p className="text-xs" style={{ color: palette.textMuted }}>Invested</p>
-                        <p className="font-bold" style={{ color: palette.text }}>${inv.invested}</p>
+                    {/* Stats pills row */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: palette.surfaceAlt }}>
+                        <span style={{ color: palette.textMuted }}>Backed</span>
+                        <span className="font-semibold" style={{ color: palette.text }}>${inv.amount.toLocaleString()}</span>
+                        <span style={{ color: palette.textSubtle }}>· {investedDate}</span>
                       </div>
-                      <div>
-                        <p className="text-xs" style={{ color: palette.textMuted }}>Earned</p>
-                        <p className="font-bold" style={{ color: palette.success }}>+${inv.earned.toFixed(2)}</p>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: palette.surfaceAlt }}>
+                        <span style={{ color: palette.textMuted }}>Expected Return Range</span>
+                        <span className="font-semibold" style={{ color: palette.text }}>{inv.return_low}% to {inv.return_high}%</span>
                       </div>
-                      <div>
-                        <p className="text-xs" style={{ color: palette.textMuted }}>Base Return</p>
-                        <p className="font-bold" style={{ color: palette.primaryLight }}>+{inv.returnBase}%</p>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style={{ backgroundColor: `${palette.accent}12` }}>
+                        <Clock size={11} style={{ color: palette.accent }} />
+                        <span style={{ color: palette.accent }} className="font-medium">Next payout {payout.label}</span>
+                        <span style={{ color: palette.textSubtle }}>· {payout.note}</span>
                       </div>
                     </div>
 
-                    {/* Term Progress */}
-                    <div className="flex-1">
+                    {/* Term progress */}
+                    <div>
                       <div className="flex justify-between text-xs mb-1.5">
-                        <span style={{ color: palette.textMuted }}>Term Progress</span>
-                        <span style={{ color: palette.text }}>{inv.monthsIn}/{inv.term} mo</span>
+                        <span style={{ color: palette.textMuted }}>Term Progress · Started {startLabel}</span>
+                        <span style={{ color: palette.text }}>{elapsed}/{inv.term_months} mo</span>
                       </div>
                       <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: palette.surfaceAlt }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${pct}%`, background: palette.gradient }}
-                        />
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: palette.gradient }} />
                       </div>
-                      <p className="text-xs mt-1" style={{ color: palette.textSubtle }}>Next: {inv.nextPayout}</p>
                     </div>
-
-                    {/* Action */}
-                    <button
-                      onClick={() => navigate('/statement')}
-                      className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-xl flex-shrink-0"
-                      style={{ backgroundColor: palette.surfaceAlt, color: palette.primary, border: `1px solid ${palette.border}` }}
-                    >
-                      <FileText size={12} /> Statement
-                    </button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* IOI Box */}
+        {investments.length > 0 && (
+          <div
+            className="mt-8 rounded-2xl p-6 text-center"
+            style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}
+          >
+            <div className="text-xs font-bold tracking-wider px-2 py-0.5 rounded inline-block mb-3" style={{ backgroundColor: `${palette.accent}20`, color: palette.accent }}>
+              INDICATION OF INTEREST
+            </div>
+            <h3 className="font-bold mb-2" style={{ color: palette.text }}>Ready to Back Creators for Real?</h3>
+            <p className="text-sm mb-4 max-w-md mx-auto" style={{ color: palette.textMuted }}>
+              Submit a non-binding IOI — tell us how much you'd back when real money goes live.
+            </p>
+            <div className="flex gap-2 justify-center mb-4">
+              {['$500', '$1K', '$5K', '$10K+'].map(amt => (
+                <button key={amt} className="text-xs px-4 py-1.5 rounded-lg" style={{ backgroundColor: palette.surface, color: palette.textMuted, border: `1px solid ${palette.border}` }}>
+                  {amt}
+                </button>
+              ))}
+            </div>
+            <button className="px-6 py-2.5 rounded-xl text-sm font-semibold" style={{ background: palette.accentGradient, color: palette.onAccent }}>
+              Submit IOI
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

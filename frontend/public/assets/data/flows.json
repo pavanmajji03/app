@@ -1,0 +1,30 @@
+{
+  "status": "success",
+  "message": "Flows fetched successfully",
+  "data": {
+    "fanFlow": {
+      "id": "fan",
+      "label": "Fan Flow",
+      "emoji": "chart_increasing",
+      "steps": [
+        { "label": "Home", "path": "/", "description": "Landing page" },
+        { "label": "Marketplace", "path": "/marketplace", "description": "Browse creators" },
+        { "label": "Creator", "path": "/creator", "description": "Campaign details" },
+        { "label": "Portfolio", "path": "/portfolio", "description": "My investments" },
+        { "label": "Statement", "path": "/statement", "description": "Monthly payout" }
+      ]
+    },
+    "creatorFlow": {
+      "id": "creator",
+      "label": "Creator Flow",
+      "emoji": "movie_camera",
+      "steps": [
+        { "label": "Onboard", "path": "/onboard", "description": "Submit channel" },
+        { "label": "Analysis", "path": "/analysis", "description": "AI analyzing..." },
+        { "label": "AI Report", "path": "/report", "description": "Underwriting report" },
+        { "label": "Campaign", "path": "/campaign-setup", "description": "Set terms" },
+        { "label": "Live!", "path": "/campaign-live", "description": "Campaign published" }
+      ]
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-import path from 'path'
+import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
@@ -13,14 +13,19 @@ export default defineConfig({
   resolve: {
     alias: {
       // Alias @ to the src directory
-      '@': path.resolve(__dirname, './src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+
+  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
+  assetsInclude: ['**/*.svg', '**/*.csv'],
   server: {
+    host: true, // Listen on all network interfaces
     port: 3000,
-    host: true, // Listen on all addresses
     strictPort: true,
     allowedHosts: [
+      'fanzfolio.com',
+      'www.fanzfolio.com',
       'quickstart-guide-6.cluster-8.preview.emergentcf.cloud',
       'quickstart-guide-6.preview.emergentagent.com',
       '.preview.emergentagent.com',
@@ -31,6 +36,4 @@ export default defineConfig({
       protocol: 'wss',
     },
   },
-  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
-  assetsInclude: ['**/*.svg', '**/*.csv'],
 })

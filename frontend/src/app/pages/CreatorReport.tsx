@@ -1,15 +1,19 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { creators } from '../data/mockData';
-import { Star, Shield, TrendingUp, AlertTriangle, ArrowRight, CheckCircle, Youtube, Globe, Zap } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import type { AnalysisChannel } from '../data/mockData';
+import {
+  Star, Shield, TrendingUp, AlertTriangle, ArrowRight, CheckCircle,
+  Play, Zap, Users, RefreshCw,
+} from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-const creator = creators[0];
-
-function ScoreGauge({ score }: { score: number }) {
+// ─── Score Gauge ──────────────────────────────────────────────────────────────
+function ScoreGauge({ score, label }: { score: number; label: string }) {
   const { palette } = useTheme();
   const color = score >= 80 ? palette.success : score >= 65 ? palette.warning : palette.danger;
-  const label = score >= 80 ? 'Strong' : score >= 65 ? 'Good' : 'Moderate';
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (score / 100) * circumference;
 
@@ -31,58 +35,186 @@ function ScoreGauge({ score }: { score: number }) {
           <span className="text-xs font-medium" style={{ color: palette.textMuted }}>/ 100</span>
         </div>
       </div>
-      <span
-        className="text-sm font-bold mt-2 px-3 py-1 rounded-full"
-        style={{ backgroundColor: `${color}18`, color }}
-      >
+      <span className="text-sm font-bold mt-2 px-3 py-1 rounded-full" style={{ backgroundColor: `${color}18`, color }}>
         {label}
       </span>
     </div>
   );
 }
 
-function RiskBar({ label, value, inverse = false }: { label: string; value: number; inverse?: boolean }) {
+// ─── Risk Bar ─────────────────────────────────────────────────────────────────
+function RiskBar({ label, value }: { label: string; value: number }) {
   const { palette } = useTheme();
-  const displayValue = inverse ? 100 - value : value;
-  const color = displayValue >= 75 ? palette.success : displayValue >= 50 ? palette.warning : palette.danger;
+  const color = value >= 80 ? palette.success : value >= 60 ? palette.warning : palette.danger;
   return (
     <div className="mb-3">
       <div className="flex justify-between items-center mb-1.5">
         <span className="text-xs" style={{ color: palette.textMuted }}>{label}</span>
-        <span className="text-xs font-bold" style={{ color }}>{displayValue}/100</span>
+        <span className="text-xs font-bold" style={{ color }}>{value}/100</span>
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: palette.surfaceAlt }}>
         <div
-          className="h-full rounded-full"
-          style={{ width: `${displayValue}%`, backgroundColor: color, transition: 'width 1s ease' }}
+          className="h-full rounded-full transition-all"
+          style={{ width: `${value}%`, backgroundColor: color, transition: 'width 1s ease' }}
         />
       </div>
     </div>
   );
 }
 
+// ─── Stat Chip ────────────────────────────────────────────────────────────────
+function StatChip({ label, value }: { label: string; value: string }) {
+  const { palette } = useTheme();
+  return (
+    <div className="text-center px-1">
+      <p className="text-base font-black" style={{ color: palette.onPrimary }}>{value}</p>
+      <p className="text-xs mt-0.5" style={{ color: `${palette.onPrimary}99` }}>{label}</p>
+    </div>
+  );
+}
+
+// ─── Signal Row ───────────────────────────────────────────────────────────────
+function SignalRow({ label, value }: { label: string; value: string }) {
+  const { palette } = useTheme();
+  return (
+    <div className="flex items-start gap-1.5 mb-1.5">
+      <CheckCircle size={10} className="mt-0.5 shrink-0" style={{ color: palette.success }} />
+      <span className="text-xs leading-snug" style={{ color: palette.textMuted }}>
+        <strong style={{ color: palette.text }}>{label}:</strong> {value}
+      </span>
+    </div>
+  );
+}
+
+// ─── Revenue Scenario Card ────────────────────────────────────────────────────
+function ScenarioCard({
+  label, views, revenue, notes, accentColor,
+}: { label: string; views: string; revenue: string; notes: string; accentColor: string }) {
+  const { palette } = useTheme();
+  return (
+    <div
+      className="p-3 rounded-xl mb-3"
+      style={{ backgroundColor: `${accentColor}10`, border: `1px solid ${accentColor}28` }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className="font-bold text-sm" style={{ color: accentColor }}>{label}</p>
+          <p className="text-xs mt-0.5" style={{ color: palette.textMuted }}>{notes}</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="font-bold text-sm" style={{ color: palette.text }}>{views} views</p>
+          <p className="text-xs" style={{ color: palette.textMuted }}>{revenue}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface LiveCampaignInfo {
+  campaign_id: string;
+  start_date: string | null;
+  term_months: number;
+  status: string;
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export function CreatorReport() {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [channel, setChannel] = useState<AnalysisChannel | null>(null);
+  const [liveCampaign, setLiveCampaign] = useState<LiveCampaignInfo | null>(null);
+
+  useEffect(() => {
+    // Priority: sessionStorage (just analysed) → localStorage (returning user)
+    const fromSession = sessionStorage.getItem('fanfolio_report');
+    if (fromSession) {
+      try { setChannel(JSON.parse(fromSession)); return; } catch { /* fall through */ }
+    }
+    if (user?.email) {
+      const fromLocal = localStorage.getItem(`fanfolio_creator_report_${user.email}`);
+      if (fromLocal) {
+        try {
+          const parsed = JSON.parse(fromLocal);
+          sessionStorage.setItem('fanfolio_report', fromLocal);
+          setChannel(parsed);
+          return;
+        } catch { /* fall through */ }
+      }
+    }
+    // No real report found — redirect to onboard so user runs analysis
+    navigate('/onboard', { replace: true });
+  }, [user, navigate]);
+
+  // Check if creator already has a live campaign
+  useEffect(() => {
+    const analysisId =
+      sessionStorage.getItem('fanfolio_analysis_id') ||
+      (user?.email ? localStorage.getItem(`fanfolio_analysis_id_${user.email}`) : null);
+    if (!analysisId) return;
+    callApi<LiveCampaignInfo>('getCampaignByAnalysis_CreatorPage', { pathParams: { analysis_id: analysisId } })
+      .then(res => setLiveCampaign(res.data))
+      .catch(() => {});
+  }, [user]);
+
+  const handleReanalyze = () => {
+    if (user?.email) {
+      localStorage.removeItem(`fanfolio_creator_report_${user.email}`);
+      localStorage.removeItem(`fanfolio_analysis_id_${user.email}`);
+    }
+    sessionStorage.removeItem('fanfolio_report');
+    sessionStorage.removeItem('fanfolio_analysis_id');
+    sessionStorage.removeItem('fanfolio_anim_done');
+    navigate('/onboard');
+  };
+
+  if (!channel) return null;
+
+  // Support both new field names and old backward-compat names
+  const forecast = channel.view_forecast_millions ?? channel.view_forecast_millions_180_days ?? {};
+  const revYpp = channel.revenue_scenarios_adsense ?? channel.revenue_scenarios_ypp ?? {};
+  // New format: revenue_scenarios_adsense['180d'].low/base/high
+  // Old format: revenue_scenarios_180_days_youtube_only.low_conservative/base_expected/high_optimistic
+  const rev180 = revYpp['180d'] ?? {};
+  const revOld = channel.revenue_scenarios_180_days_youtube_only ?? {};
+  const revenue = {
+    low_conservative:  rev180.low  ? { views: rev180.low.views,  estimated_adSense: rev180.low.estimated_revenue,  notes: 'Conservative: reduced cadence or algorithm dip' }  : (revOld.low_conservative  ?? {}),
+    base_expected:     rev180.base ? { views: rev180.base.views, estimated_adSense: rev180.base.estimated_revenue, notes: 'Expected: current cadence and engagement maintained' } : (revOld.base_expected     ?? {}),
+    high_optimistic:   rev180.high ? { views: rev180.high.views, estimated_adSense: rev180.high.estimated_revenue, notes: 'Optimistic: viral growth or new series launch' }        : (revOld.high_optimistic   ?? {}),
+  };
+
+  const { ai_underwriting_report: hdr, youtube_signals: yt, social_signals: social,
+    trending_topics_analysis: topics, risk_factor_analysis: risk,
+    ai_assessment_summary: assess, campaign_readiness: cta } = channel;
 
   const forecastChartData = [
-    { period: '30d', Low: creator.forecastData.views30.low, Base: creator.forecastData.views30.base, High: creator.forecastData.views30.high },
-    { period: '90d', Low: creator.forecastData.views90.low, Base: creator.forecastData.views90.base, High: creator.forecastData.views90.high },
-    { period: '180d', Low: creator.forecastData.views180.low, Base: creator.forecastData.views180.base, High: creator.forecastData.views180.high },
+    { period: '30d',  Low: forecast.low_conservative['30d'],  Base: forecast.base_expected['30d'],  High: forecast.high_optimistic['30d']  },
+    { period: '90d',  Low: forecast.low_conservative['90d'],  Base: forecast.base_expected['90d'],  High: forecast.high_optimistic['90d']  },
+    { period: '180d', Low: forecast.low_conservative['180d'], Base: forecast.base_expected['180d'], High: forecast.high_optimistic['180d'] },
   ];
 
   return (
     <div style={{ backgroundColor: palette.bg, minHeight: '100vh' }}>
       <div className="max-w-4xl mx-auto px-6 py-10">
-        {/* Report Header */}
+
+        {/* ── Re-analyze bar ─────────────────────────────────────────── */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs" style={{ color: palette.textSubtle }}>Your last analysis result</p>
+          <button
+            onClick={handleReanalyze}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+            style={{ backgroundColor: palette.surfaceAlt, color: palette.textMuted, border: `1px solid ${palette.border}` }}
+          >
+            <RefreshCw size={12} /> Run New Analysis
+          </button>
+        </div>
+
+        {/* ── Header ─────────────────────────────────────────────────── */}
         <div
           className="rounded-2xl p-6 mb-6 relative overflow-hidden"
           style={{ background: palette.gradient }}
         >
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 50%)' }}
-          />
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 50%, white 0%, transparent 50%)' }} />
           <div className="relative flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex-1">
               <div
@@ -91,71 +223,101 @@ export function CreatorReport() {
               >
                 <Zap size={12} /> AI Underwriting Report
               </div>
-              <h1 className="text-2xl font-black mb-1" style={{ color: palette.onPrimary }}>
-                {creator.name}
+              <h1 className="text-2xl font-black mb-0.5" style={{ color: palette.onPrimary }}>
+                {hdr.channel_name}
               </h1>
-              <p style={{ color: `${palette.onPrimary}cc` }}>
-                {creator.handle} · {creator.category} · {creator.location}
+              <p className="text-sm mb-1" style={{ color: `${palette.onPrimary}cc` }}>
+                {hdr.handle} · {hdr.location}
               </p>
-              <div className="flex flex-wrap gap-3 mt-3">
-                <span className="text-sm" style={{ color: `${palette.onPrimary}cc` }}>
-                  <strong style={{ color: palette.onPrimary }}>{creator.subscribers}</strong> subscribers
-                </span>
-                <span className="text-sm" style={{ color: `${palette.onPrimary}cc` }}>
-                  <strong style={{ color: palette.onPrimary }}>{creator.avgViews}</strong> avg views
-                </span>
-                <span className="text-sm" style={{ color: `${palette.onPrimary}cc` }}>
-                  <strong style={{ color: palette.onPrimary }}>{creator.growthRate}</strong> growth
-                </span>
+              <p className="text-xs mb-3" style={{ color: `${palette.onPrimary}99` }}>
+                {hdr.niche}
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                <StatChip label="Subscribers" value={hdr.subscribers} />
+                <StatChip label="Avg Views" value={hdr.avg_views} />
+                <StatChip label="Total Views" value={hdr.total_views} />
+                <StatChip label="Total Videos" value={hdr.total_videos} />
+                <StatChip label="Growth (30d)" value={hdr.growth_rate} />
               </div>
+              <p className="text-xs mt-3" style={{ color: `${palette.onPrimary}99` }}>
+                📊 {hdr.recent_performance}
+              </p>
             </div>
-            <ScoreGauge score={creator.aiScore} />
+            <ScoreGauge score={hdr.ai_score} label={hdr.ai_score_label} />
           </div>
         </div>
 
-        {/* Signals analyzed */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          {[
-            { icon: Youtube, label: 'YouTube Signals', items: ['8.2M subscribers', '2.1B total views', '30 recent videos', '+18% growth rate', '2× weekly cadence'] },
-            { icon: Globe, label: 'Social Signals', items: ['Instagram: 1.2M followers', 'X: 340K followers', '8.9% avg engagement', 'Cross-platform momentum', 'No controversy flags'] },
-            { icon: TrendingUp, label: 'Trend Signals', items: ['Tech topics trending ↑', 'Recent collab announcement', 'No viral dependency', 'Consistent top results', 'Strong SEO footprint'] },
-          ].map(group => {
-            const Icon = group.icon;
-            return (
-              <div
-                key={group.label}
-                className="rounded-2xl p-4"
-                style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ backgroundColor: `${palette.primary}18` }}
-                  >
-                    <Icon size={14} style={{ color: palette.primary }} />
-                  </div>
-                  <span className="text-xs font-bold" style={{ color: palette.text }}>{group.label}</span>
-                </div>
-                {group.items.map(item => (
-                  <div key={item} className="flex items-center gap-1.5 mb-1.5">
-                    <CheckCircle size={10} style={{ color: palette.success }} />
-                    <span className="text-xs" style={{ color: palette.textMuted }}>{item}</span>
-                  </div>
-                ))}
+        {/* ── Signal Cards ───────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+          {/* YouTube Signals */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${palette.danger}18` }}>
+                <Play size={14} style={{ color: palette.danger }} />
               </div>
-            );
-          })}
+              <span className="text-xs font-bold" style={{ color: palette.text }}>YouTube Signals</span>
+            </div>
+            <SignalRow label="Subscribers" value={yt.subscribers} />
+            <SignalRow label="Total Views" value={yt.total_views} />
+            <SignalRow label="Recent Videos" value={yt.recent_videos} />
+            <SignalRow label="Growth" value={yt.growth_rate} />
+            <SignalRow label="Cadence" value={yt.cadence} />
+            <p className="text-xs mt-2 leading-snug" style={{ color: palette.textSubtle }}>{yt.notes}</p>
+          </div>
+
+          {/* Social Signals */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${palette.primary}18` }}>
+                <Users size={14} style={{ color: palette.primary }} />
+              </div>
+              <span className="text-xs font-bold" style={{ color: palette.text }}>Social Signals</span>
+            </div>
+            {social.instagram && (
+              <SignalRow label="Instagram" value={`${social.instagram.followers ?? '—'} followers · ${social.instagram.engagement_rate ?? '—'} eng.`} />
+            )}
+            {social.twitter_x && (
+              <SignalRow label="X / Twitter" value={`${social.twitter_x.followers ?? social.twitter_x.handle ?? '—'} followers`} />
+            )}
+            {social.linkedin && (
+              <SignalRow label="LinkedIn" value={social.linkedin.followers ? `${social.linkedin.followers} followers` : social.linkedin.url ?? '—'} />
+            )}
+            {!social.instagram && !social.twitter_x && !social.linkedin && (
+              <p className="text-xs mb-2" style={{ color: palette.textSubtle }}>No social data — add handles for better signals</p>
+            )}
+            <div className="flex items-start gap-1.5 mt-2">
+              <CheckCircle size={10} className="mt-0.5 shrink-0" style={{ color: social.no_controversy_flags ? palette.success : palette.warning }} />
+              <span className="text-xs" style={{ color: palette.textMuted }}>No controversy flags</span>
+            </div>
+            <p className="text-xs mt-2 leading-snug" style={{ color: palette.textSubtle }}>{social.cross_platform_momentum}</p>
+          </div>
+
+          {/* Trending Topics */}
+          <div className="rounded-2xl p-4" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${palette.accent}18` }}>
+                <TrendingUp size={14} style={{ color: palette.accent }} />
+              </div>
+              <span className="text-xs font-bold" style={{ color: palette.text }}>Trending Topics</span>
+            </div>
+            {topics.top_trending_topics.map(t => (
+              <div key={t} className="flex items-start gap-1.5 mb-1.5">
+                <Star size={9} className="mt-0.5 shrink-0" style={{ color: palette.accent }} />
+                <span className="text-xs leading-snug" style={{ color: palette.textMuted }}>{t}</span>
+              </div>
+            ))}
+            <p className="text-xs mt-2 leading-snug" style={{ color: palette.textSubtle }}>{topics.momentum}</p>
+          </div>
         </div>
 
-        {/* Forecast */}
+        {/* ── Forecast + Revenue ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
           {/* Chart */}
-          <div
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-          >
+          <div className="rounded-2xl p-5" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
             <h3 className="font-bold mb-1" style={{ color: palette.text }}>View Forecast (Millions)</h3>
-            <p className="text-xs mb-5" style={{ color: palette.textMuted }}>Low / Base / High scenarios</p>
+            <p className="text-xs mb-4" style={{ color: palette.textMuted }}>Low / Base / High — 30 · 90 · 180 day scenarios</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={forecastChartData} barGap={3} barCategoryGap="35%">
                 <CartesianGrid strokeDasharray="3 3" stroke={`${palette.border}60`} vertical={false} />
@@ -163,147 +325,175 @@ export function CreatorReport() {
                 <YAxis tick={{ fill: palette.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}`, borderRadius: 10, color: palette.text }}
-                  formatter={(v: any) => [`${v}M`, '']}
+                  formatter={(v: any) => [`${v}M views`, '']}
                 />
-                <Bar dataKey="Low" fill={palette.warning} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Base" fill={palette.primary} radius={[3, 3, 0, 0]} />
-                <Bar dataKey="High" fill={palette.success} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Low"  fill={palette.warning} radius={[3,3,0,0]} />
+                <Bar dataKey="Base" fill={palette.primary} radius={[3,3,0,0]} />
+                <Bar dataKey="High" fill={palette.success} radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
+            <div className="flex gap-4 mt-3 justify-center">
+              {[{ label: 'Conservative', color: palette.warning }, { label: 'Base', color: palette.primary }, { label: 'Optimistic', color: palette.success }].map(s => (
+                <div key={s.label} className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="text-xs" style={{ color: palette.textMuted }}>{s.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 space-y-1">
+              {[
+                { label: '🔴 Conservative', note: forecast.low_conservative.notes },
+                { label: '🔵 Base', note: forecast.base_expected.notes },
+                { label: '🟢 Optimistic', note: forecast.high_optimistic.notes },
+              ].map(n => (
+                <p key={n.label} className="text-xs" style={{ color: palette.textSubtle }}>
+                  <strong>{n.label}:</strong> {n.note}
+                </p>
+              ))}
+            </div>
           </div>
 
-          {/* Scenario table */}
-          <div
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-          >
-            <h3 className="font-bold mb-4" style={{ color: palette.text }}>Revenue Scenarios (180 Days)</h3>
-            {[
-              {
-                label: 'Low',
-                desc: 'Conservative floor — designed to be exceeded',
-                views: `${creator.forecastData.views180.low}M`,
-                revenue: '$630K–$900K',
-                color: palette.warning,
-              },
-              {
-                label: 'Base',
-                desc: 'Typical expectation based on recent data',
-                views: `${creator.forecastData.views180.base}M`,
-                revenue: '$960K–$1.4M',
-                color: palette.primary,
-              },
-              {
-                label: 'High',
-                desc: 'Upside scenario — strong viral uplift',
-                views: `${creator.forecastData.views180.high}M`,
-                revenue: '$1.4M–$2.0M',
-                color: palette.success,
-              },
-            ].map((s, i) => (
-              <div
-                key={s.label}
-                className="p-3 rounded-xl mb-3"
-                style={{ backgroundColor: `${s.color}10`, border: `1px solid ${s.color}25` }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-sm" style={{ color: s.color }}>{s.label} Scenario</p>
-                    <p className="text-xs mt-0.5" style={{ color: palette.textMuted }}>{s.desc}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm" style={{ color: palette.text }}>{s.views} views</p>
-                    <p className="text-xs" style={{ color: palette.textMuted }}>{s.revenue} est. revenue</p>
-                  </div>
-                </div>
-              </div>
-            ))}
+          {/* Revenue Scenarios */}
+          <div className="rounded-2xl p-5" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <h3 className="font-bold mb-1" style={{ color: palette.text }}>Revenue Scenarios (180 Days)</h3>
+            <p className="text-xs mb-4" style={{ color: palette.textMuted }}>AdSense income · est. monthly: {assess.estimated_monthly_adsense_income ?? assess.estimated_monthly_ypp_income ?? assess.youtube_only_adSense_monthly}</p>
+            <ScenarioCard label="Conservative" views={revenue.low_conservative.views} revenue={revenue.low_conservative.estimated_adSense} notes={revenue.low_conservative.notes} accentColor={palette.warning} />
+            <ScenarioCard label="Base Expected" views={revenue.base_expected.views} revenue={revenue.base_expected.estimated_adSense} notes={revenue.base_expected.notes} accentColor={palette.primary} />
+            <ScenarioCard label="Optimistic" views={revenue.high_optimistic.views} revenue={revenue.high_optimistic.estimated_adSense} notes={revenue.high_optimistic.notes} accentColor={palette.success} />
           </div>
         </div>
 
-        {/* Risk Analysis */}
+        {/* ── Risk + Assessment ──────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div
-            className="rounded-2xl p-5"
-            style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-          >
+
+          {/* Risk Factors */}
+          <div className="rounded-2xl p-5" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
             <h3 className="font-bold mb-4" style={{ color: palette.text }}>Risk Factor Analysis</h3>
-            <RiskBar label="Growth Trend" value={creator.riskFactors.growthTrend} />
-            <RiskBar label="Cadence Reliability" value={creator.riskFactors.cadenceReliability} />
-            <RiskBar label="Platform Diversification" value={creator.riskFactors.platformDiversification} />
-            <RiskBar label="Low Volatility (higher = better)" value={creator.riskFactors.volatility} inverse />
-            <RiskBar label="Low Concentration Risk (higher = better)" value={creator.riskFactors.concentrationRisk} inverse />
+            <RiskBar label="Growth Trend" value={risk.growth_trend} />
+            <RiskBar label="Cadence Reliability" value={risk.cadence_reliability} />
+            <RiskBar label="Platform Diversification" value={risk.platform_diversification} />
+            <RiskBar label="Low Volatility (higher = better)" value={risk.low_volatility_higher_is_better} />
+            <RiskBar label="Low Concentration Risk (higher = better)" value={risk.low_concentration_risk_higher_is_better} />
           </div>
 
+          {/* AI Assessment */}
+          <div className="rounded-2xl p-5" style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}>
+            <h3 className="font-bold mb-4" style={{ color: palette.text }}>AI Assessment Summary</h3>
+
+            <div className="p-3 rounded-xl mb-3 flex items-start gap-2" style={{ backgroundColor: `${palette.success}12`, border: `1px solid ${palette.success}25` }}>
+              <Shield size={14} className="mt-0.5 shrink-0" style={{ color: palette.success }} />
+              <div>
+                <p className="text-xs font-bold mb-1.5" style={{ color: palette.success }}>Strengths</p>
+                <ul className="text-xs space-y-1" style={{ color: palette.textMuted }}>
+                  {assess.strengths.map(s => <li key={s}>• {s}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl mb-3 flex items-start gap-2" style={{ backgroundColor: `${palette.warning}10`, border: `1px solid ${palette.warning}25` }}>
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" style={{ color: palette.warning }} />
+              <div>
+                <p className="text-xs font-bold mb-1.5" style={{ color: palette.warning }}>Watch Factors</p>
+                <ul className="text-xs space-y-1" style={{ color: palette.textMuted }}>
+                  {assess.watch_factors.map(w => <li key={w}>• {w}</li>)}
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl" style={{ backgroundColor: palette.surfaceAlt }}>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs" style={{ color: palette.textSubtle }}>Confidence Score</p>
+                <span className="text-sm font-black" style={{ color: palette.success }}>{assess.confidence_score}/100</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: palette.bg }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${assess.confidence_score}%`, backgroundColor: palette.success }} />
+              </div>
+              <p className="text-xs mt-1.5" style={{ color: palette.textSubtle }}>Based on {assess.confidence_based_on}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── CTA ────────────────────────────────────────────────────── */}
+        {liveCampaign ? (
+          // Already has a live campaign — show status + next campaign info
+          (() => {
+            const startDate = liveCampaign.start_date ? new Date(liveCampaign.start_date) : new Date();
+            const endDate = new Date(startDate);
+            endDate.setMonth(endDate.getMonth() + liveCampaign.term_months);
+            const nextCampaignEligible = new Date(endDate);
+            nextCampaignEligible.setMonth(nextCampaignEligible.getMonth() - 1);
+            const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const now = new Date();
+            const canSetupNow = now >= nextCampaignEligible;
+            return (
+              <div
+                className="rounded-2xl p-6 text-center"
+                style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
+              >
+                <div
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full mb-3"
+                  style={{ backgroundColor: `${palette.success}18`, color: palette.success }}
+                >
+                  <Zap size={11} /> Campaign Live · Season 1
+                </div>
+                <h3 className="font-bold text-lg mb-2" style={{ color: palette.text }}>
+                  Your campaign is currently live!
+                </h3>
+                <p className="text-sm mb-2" style={{ color: palette.textMuted }}>
+                  Current campaign runs until <strong style={{ color: palette.text }}>{fmt(endDate)}</strong>.
+                </p>
+                <p className="text-xs mb-5 px-4" style={{ color: palette.textSubtle }}>
+                  You can set up your next campaign (Season 2) from <strong style={{ color: palette.text }}>{fmt(nextCampaignEligible)}</strong> — one month before this campaign ends.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => navigate('/campaign-live')}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm"
+                    style={{ background: palette.gradient, color: palette.onPrimary }}
+                  >
+                    View Live Campaign <ArrowRight size={15} />
+                  </button>
+                  {canSetupNow && (
+                    <button
+                      onClick={() => navigate('/campaign-setup')}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm"
+                      style={{ backgroundColor: `${palette.primary}15`, color: palette.primary, border: `1px solid ${palette.primary}30` }}
+                    >
+                      Set Up Season 2
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()
+        ) : (
+          // No campaign yet — show standard setup CTA
           <div
-            className="rounded-2xl p-5"
+            className="rounded-2xl p-6 text-center"
             style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
           >
-            <h3 className="font-bold mb-4" style={{ color: palette.text }}>AI Assessment Summary</h3>
             <div
-              className="p-3 rounded-xl mb-3 flex items-start gap-2"
-              style={{ backgroundColor: `${palette.success}12`, border: `1px solid ${palette.success}25` }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full mb-3"
+              style={{ backgroundColor: `${palette.success}18`, color: palette.success }}
             >
-              <Shield size={14} style={{ color: palette.success, marginTop: 1 }} />
-              <div>
-                <p className="text-xs font-bold mb-1" style={{ color: palette.success }}>Strengths</p>
-                <ul className="text-xs space-y-1" style={{ color: palette.textMuted }}>
-                  <li>• Exceptionally consistent upload cadence (2× weekly)</li>
-                  <li>• Low volatility across 30 recent videos</li>
-                  <li>• Strong subscriber growth trajectory (+18%)</li>
-                  <li>• Multi-platform presence reduces channel risk</li>
-                </ul>
-              </div>
+              <Zap size={11} /> Campaign Ready · {cta.overall_score}
             </div>
-            <div
-              className="p-3 rounded-xl flex items-start gap-2"
-              style={{ backgroundColor: `${palette.warning}10`, border: `1px solid ${palette.warning}25` }}
+            <h3 className="font-bold text-lg mb-2" style={{ color: palette.text }}>
+              Ready to create your campaign?
+            </h3>
+            <p className="text-sm mb-5" style={{ color: palette.textMuted }}>
+              {cta.message}
+            </p>
+            <button
+              onClick={() => navigate('/campaign-setup')}
+              className="flex items-center justify-center gap-2 mx-auto px-8 py-3 rounded-xl font-bold text-sm"
+              style={{ background: palette.gradient, color: palette.onPrimary }}
             >
-              <AlertTriangle size={14} style={{ color: palette.warning, marginTop: 1 }} />
-              <div>
-                <p className="text-xs font-bold mb-1" style={{ color: palette.warning }}>Watch Factors</p>
-                <ul className="text-xs space-y-1" style={{ color: palette.textMuted }}>
-                  <li>• Algorithm dependency in the tech niche</li>
-                  <li>• Seasonal dips possible (summer, holidays)</li>
-                </ul>
-              </div>
-            </div>
-
-            <div
-              className="mt-4 p-3 rounded-xl"
-              style={{ backgroundColor: palette.surfaceAlt }}
-            >
-              <p className="text-xs" style={{ color: palette.textSubtle }}>Confidence Score</p>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: palette.bg }}>
-                  <div className="h-full rounded-full" style={{ width: '84%', backgroundColor: palette.success }} />
-                </div>
-                <span className="text-sm font-bold" style={{ color: palette.success }}>84%</span>
-              </div>
-              <p className="text-xs mt-1" style={{ color: palette.textSubtle }}>Based on 2,400+ data points</p>
-            </div>
+              Set Up Campaign <ArrowRight size={16} />
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* CTA */}
-        <div
-          className="rounded-2xl p-6 text-center"
-          style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
-        >
-          <h3 className="font-bold text-lg mb-2" style={{ color: palette.text }}>
-            Ready to create your campaign?
-          </h3>
-          <p className="text-sm mb-5" style={{ color: palette.textMuted }}>
-            Your AI score of <strong style={{ color: palette.success }}>{creator.aiScore}/100</strong> qualifies you for a campaign. Set your terms and go live.
-          </p>
-          <button
-            onClick={() => navigate('/campaign-setup')}
-            className="flex items-center justify-center gap-2 mx-auto px-8 py-3 rounded-xl font-bold text-sm"
-            style={{ background: palette.gradient, color: palette.onPrimary }}
-          >
-            Set Up Campaign <ArrowRight size={16} />
-          </button>
-        </div>
       </div>
     </div>
   );

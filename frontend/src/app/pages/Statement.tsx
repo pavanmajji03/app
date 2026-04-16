@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { statementData } from '../data/mockData';
+import { callApi } from '../services/apiService';
+import type { StatementData } from '../data/mockData';
 import { FileText, TrendingUp, ArrowLeft, Download, Share2, CheckCircle, Info } from 'lucide-react';
 
 function Row({ label, value, highlight = false, large = false }: { label: string; value: string; highlight?: boolean; large?: boolean }) {
@@ -29,7 +31,13 @@ function Row({ label, value, highlight = false, large = false }: { label: string
 export function Statement() {
   const { palette } = useTheme();
   const navigate = useNavigate();
-  const d = statementData;
+  const [d, setD] = useState<StatementData | null>(null);
+
+  useEffect(() => {
+    callApi<StatementData>('getStatementData_Statement').then(res => setD(res.data));
+  }, []);
+
+  if (!d) return null;
 
   const overBase = ((d.actualViews - d.estimatedViews.base) / d.estimatedViews.base * 100).toFixed(1);
 

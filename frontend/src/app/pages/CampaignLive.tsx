@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useTheme } from '../context/ThemeContext';
-import { creators } from '../data/mockData';
+import { useAuth } from '../context/AuthContext';
+import { callApi } from '../services/apiService';
+import { getStoredReport } from '../utils/reportUtils';
+import type { Creator } from '../data/mockData';
 import {
   CheckCircle, Share2, Copy, TrendingUp, Users, DollarSign,
-  ArrowRight, Eye, Zap, Star, Twitter, Linkedin, Link2,
+  ArrowRight, Eye, Zap, Star, Twitter, Linkedin, Link2, RefreshCw,
 } from 'lucide-react';
-
-const creator = creators[0];
 
 function ConfettiDots() {
   const dots = Array.from({ length: 24 }, (_, i) => ({
@@ -40,33 +41,117 @@ function ConfettiDots() {
   );
 }
 
+interface LiveCampaign {
+  campaign_id: string;
+  creator_id: string;
+  term_months: number;
+  revenue_share_pct: number;
+  target_amount: number;
+  raised_amount: number;
+  investor_count: number;
+  return_base: number;
+  return_low: number;
+  return_high: number;
+  start_date: string | null;
+}
+
 export function CampaignLive() {
   const { palette } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [creator, setCreator] = useState<Creator | null>(null);
+  const [campaign, setCampaign] = useState<LiveCampaign | null>(null);
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const campaignIdRef = useRef<string | null>(null);
 
-  const campaignUrl = `creatorbond.io/c/${creator.id}`;
+  const fetchCampaign = async (id: string, silent = false) => {
+    if (!silent) setRefreshing(true);
+    try {
+      const res = await callApi<LiveCampaign>('getCampaign_CampaignLive', { pathParams: { campaign_id: id } });
+      setCampaign(res.data);
+    } catch {
+      // Campaign not found (e.g. stale ID after DB reset) — clear the stale reference
+      sessionStorage.removeItem('fanfolio_campaign_id');
+      if (user?.email) localStorage.removeItem(`fanfolio_campaign_id_${user.email}`);
+      campaignIdRef.current = null;
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Try real report first, fall back to mock creator for display fields
+    const stored = getStoredReport(user?.email);
+    if (stored) {
+      setCreator(prev => ({
+        ...(prev ?? {} as Creator),
+        name: stored.channelName,
+        handle: stored.handle,
+        image: stored.thumbnailUrl ?? (prev?.image ?? ''),
+        aiScore: stored.aiScore,
+      } as Creator));
+    } else {
+      callApi<Creator[]>('getCreator_CampaignLive').then(res => setCreator(res.data[0]));
+    }
+
+    // Resolve campaign_id: sessionStorage first, then localStorage (returning creator)
+    const campaignId =
+      sessionStorage.getItem('fanfolio_campaign_id') ||
+      (user?.email ? localStorage.getItem(`fanfolio_campaign_id_${user.email}`) : null);
+
+    if (campaignId && campaignId !== 'undefined') {
+      campaignIdRef.current = campaignId;
+      sessionStorage.setItem('fanfolio_campaign_id', campaignId);
+      fetchCampaign(campaignId, true);
+
+      // Auto-refresh every 30 seconds to show latest investor count
+      const interval = setInterval(() => fetchCampaign(campaignId, true), 30_000);
+      return () => clearInterval(interval);
+    } else {
+      // Clear any 'undefined' string that may have been stored
+      sessionStorage.removeItem('fanfolio_campaign_id');
+      if (user?.email) localStorage.removeItem(`fanfolio_campaign_id_${user.email}`);
+    }
+  }, [user]);
+
+  if (!creator) return null;
+
+  // Merge: real campaign data takes precedence over mock creator fields
+  const term = campaign?.term_months ?? creator.term;
+  const revenueShare = campaign?.revenue_share_pct ?? creator.revenueShare;
+  const targetAmount = campaign?.target_amount ?? creator.targetAmount ?? 0;
+  const raisedAmount = campaign?.raised_amount ?? creator.raisedAmount ?? 0;
+  const returnBase = campaign?.return_base ?? creator.returnBase ?? 0;
+  const returnLow = campaign?.return_low ?? creator.returnLow ?? 0;
+  const returnHigh = campaign?.return_high ?? creator.returnHigh ?? 0;
+  const investorCount = campaign?.investor_count ?? creator.investorCount;
+  const campaignId = campaign?.campaign_id ?? null;
+
+  const baseUrl = window.location.origin;
+  const campaignUrl = campaignId ? `${baseUrl}/campaign/${campaignId}` : null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(`https://${campaignUrl}`).catch(() => {});
+    if (!campaignUrl) return;
+    navigator.clipboard.writeText(campaignUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const shareLinks = [
+  const shareLinks = campaignUrl ? [
     {
       label: 'Share on X',
       icon: Twitter,
       color: '#1DA1F2',
-      href: `https://twitter.com/intent/tweet?text=I+just+launched+my+creator+investment+campaign+on+CreatorBond!+Back+my+channel+and+earn+performance-linked+returns.&url=https://${campaignUrl}`,
+      href: `https://twitter.com/intent/tweet?text=I+just+launched+my+creator+backing+campaign!+Back+my+channel+and+earn+performance-linked+returns.&url=${encodeURIComponent(campaignUrl)}`,
     },
     {
       label: 'Share on LinkedIn',
       icon: Linkedin,
       color: '#0A66C2',
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=https://${campaignUrl}`,
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(campaignUrl)}`,
     },
-  ];
+  ] : [];
 
   const nextSteps = [
     {
@@ -79,14 +164,21 @@ export function CampaignLive() {
     {
       icon: TrendingUp,
       title: 'Keep creating content',
-      desc: 'Your payouts are tied to your actual performance. Consistent uploads = higher returns for your investors.',
+      desc: 'Your payouts are tied to your actual performance. Consistent uploads = higher returns for your backers.',
       cta: null,
       action: null,
     },
     {
       icon: Eye,
+      title: 'View AI Underwriting Report',
+      desc: 'Review your full AI analysis — forecast, revenue scenarios, risk factors, and channel signals.',
+      cta: 'View Report',
+      action: () => navigate('/report'),
+    },
+    {
+      icon: Star,
       title: 'Track your campaign',
-      desc: 'Visit your creator dashboard anytime to monitor investors, raise progress, and monthly payout statements.',
+      desc: 'Visit your creator dashboard anytime to monitor backers, raise progress, and monthly payout statements.',
       cta: 'View Dashboard',
       action: () => navigate('/creator'),
     },
@@ -122,7 +214,7 @@ export function CampaignLive() {
             </h1>
             <p className="text-base max-w-md mx-auto" style={{ color: `${palette.onPrimary}cc` }}>
               Your campaign is now visible on the CreatorBond marketplace.
-              Fans can browse, calculate payouts, and paper-invest right now.
+              Fans can browse, calculate payouts, and back you right now.
             </p>
           </div>
         </div>
@@ -132,12 +224,24 @@ export function CampaignLive() {
           className="rounded-2xl p-5 mb-6"
           style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
         >
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-semibold" style={{ color: palette.textMuted }}>Live Stats</p>
+            <button
+              onClick={() => campaignIdRef.current && fetchCampaign(campaignIdRef.current)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-opacity"
+              style={{ color: palette.textMuted, backgroundColor: palette.surfaceAlt }}
+              title="Refresh stats"
+            >
+              <RefreshCw size={11} className={refreshing ? 'animate-spin' : ''} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
           <div className="flex items-center gap-3 mb-5">
             <div
               className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0"
               style={{ border: `2px solid ${palette.primary}` }}
             >
-              <img src={creator.image} alt={creator.name} className="w-full h-full object-cover" />
+              <img src={creator.image} alt={creator.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -150,7 +254,7 @@ export function CampaignLive() {
                 </span>
               </div>
               <p className="text-xs mt-0.5" style={{ color: palette.textMuted }}>
-                {creator.term} months · {creator.revenueShare}% revenue share
+                {term} months · {revenueShare}% revenue share
               </p>
             </div>
             <div
@@ -164,9 +268,9 @@ export function CampaignLive() {
 
           <div className="grid grid-cols-3 gap-4">
             {[
-              { icon: Users, label: 'Investors', value: '0', sub: 'Just launched', color: palette.primary },
-              { icon: DollarSign, label: 'Raised', value: '$0', sub: `of $${creator.targetAmount.toLocaleString()}`, color: palette.accent },
-              { icon: TrendingUp, label: 'Base Return', value: `+${creator.returnBase}%`, sub: `${creator.returnLow}–${creator.returnHigh}% range`, color: palette.success },
+              { icon: Users, label: 'Backers', value: `${investorCount}`, sub: investorCount === 0 ? 'Just launched' : `${investorCount} backer${investorCount !== 1 ? 's' : ''}`, color: palette.primary },
+              { icon: DollarSign, label: 'Raised', value: `$${raisedAmount.toLocaleString()}`, sub: `of $${targetAmount.toLocaleString()}`, color: palette.accent },
+              { icon: TrendingUp, label: 'Base Return', value: `+${returnBase}%`, sub: `${returnLow}–${returnHigh}% range`, color: palette.success },
             ].map(item => {
               const Icon = item.icon;
               return (
@@ -196,13 +300,18 @@ export function CampaignLive() {
           style={{ backgroundColor: palette.surface, border: `1px solid ${palette.border}` }}
         >
           <h3 className="font-bold mb-3" style={{ color: palette.text }}>Your Campaign Link</h3>
+          {!campaignUrl && (
+            <p className="text-xs mb-3" style={{ color: palette.textMuted }}>
+              Campaign link will appear here once your campaign is confirmed live.
+            </p>
+          )}
           <div
             className="flex items-center gap-3 p-3 rounded-xl"
             style={{ backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.border}` }}
           >
             <Link2 size={16} style={{ color: palette.textSubtle }} />
             <span className="flex-1 text-sm font-mono" style={{ color: palette.textMuted }}>
-              {campaignUrl}
+              {campaignUrl ?? 'Pending...'}
             </span>
             <button
               onClick={handleCopy}
